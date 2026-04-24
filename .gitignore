@@ -1,0 +1,35 @@
+ n # OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vs/
+.vscode/
+*.user
+*.suo
+*.tmp
+*.temp
+
+# Logs
+*.log
+*.out.log
+*.err.log
+
+# Node / Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+frontend/.sass-cache/
+
+# .NET build artifacts
+**/bin/
+**/obj/
+
+# Local runtime configuration and secrets
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/.env
+**/.env.*
+
+# Misc local tooling
+**/Properties/launchSettings.json.user

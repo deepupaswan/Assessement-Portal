@@ -1,0 +1,13 @@
+.assessment-layout {
+  .timer-card {
+    min-width: 240px;
+    background: linear-gradient(135deg, #344e41 0%, #588157 100%);
+    color: #f7f9fb;
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+
+  .code-editor {
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+}

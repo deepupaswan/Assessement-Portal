@@ -1,0 +1,40 @@
+/* You can add global styles to this file, and also import other style files */
+@import "../node_modules/bootstrap/scss/bootstrap";
+
+:root {
+	--portal-bg: #f4f7f5;
+	--portal-surface: #ffffff;
+	--portal-ink: #1c2a31;
+	--portal-accent: #2f6f80;
+	--portal-accent-strong: #114b5f;
+}
+
+html,
+body {
+	min-height: 100%;
+}
+
+body {
+	margin: 0;
+	color: var(--portal-ink);
+	background:
+		radial-gradient(circle at 20% 20%, rgba(17, 75, 95, 0.08), transparent 50%),
+		radial-gradient(circle at 80% 0%, rgba(72, 202, 228, 0.12), transparent 35%),
+		var(--portal-bg);
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+	border-radius: 1rem;
+}
+
+.btn-primary {
+	background-color: var(--portal-accent);
+	border-color: var(--portal-accent);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+	background-color: var(--portal-accent-strong);
+	border-color: var(--portal-accent-strong);
+}

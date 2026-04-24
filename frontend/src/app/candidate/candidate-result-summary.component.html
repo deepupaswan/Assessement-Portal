@@ -1,0 +1,53 @@
+<section class="mb-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <h2 class="mb-1">Result Summary</h2>
+      <p class="text-secondary mb-0">Your assessment has been submitted and scored.</p>
+    </div>
+    <button class="btn btn-outline-primary" type="button" (click)="backToDashboard()">Back to Dashboard</button>
+  </div>
+
+  <div *ngIf="loading" class="text-secondary">Loading result summary...</div>
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div *ngIf="result as r" class="row g-3">
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <small class="text-secondary">Score</small>
+          <h3 class="mb-1">{{ r.score }} / {{ r.maxScore }}</h3>
+          <div class="progress" style="height: 10px;">
+            <div class="progress-bar" [style.width.%]="r.percentage"></div>
+          </div>
+          <div class="mt-2 text-secondary">{{ r.percentage | number: '1.0-2' }}%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <small class="text-secondary">Outcome</small>
+          <h3 class="mb-1">
+            <span class="badge" [class.text-bg-success]="r.isPassed" [class.text-bg-danger]="!r.isPassed">
+              {{ r.isPassed ? 'Passed' : 'Not Passed' }}
+            </span>
+          </h3>
+          <div class="text-secondary">{{ r.remarks || r.status }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <small class="text-secondary">Questions</small>
+          <h3 class="mb-1">{{ r.totalQuestions }}</h3>
+          <div class="text-secondary">
+            {{ r.correctAnswers }} correct, {{ r.wrongAnswers }} wrong, {{ r.skippedQuestions }} skipped
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,26 @@
+<div class="portal-shell">
+  <nav class="navbar navbar-expand-lg portal-nav">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-bold" routerLink="/">Assessment Portal</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portalNav" aria-controls="portalNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="portalNav">
+        <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+          <li class="nav-item" *ngIf="user$ | async as user">
+            <span class="badge text-bg-light">{{ user.role }}</span>
+          </li>
+          <li class="nav-item" *ngIf="user$ | async">
+            <button class="btn btn-sm btn-outline-light" type="button" (click)="logout()">Logout</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-3">
+    <app-realtime-status></app-realtime-status>
+    <router-outlet></router-outlet>
+  </div>
+</div>

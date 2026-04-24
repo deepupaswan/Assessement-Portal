@@ -1,0 +1,54 @@
+<section class="mb-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h2 class="mb-1">Candidate Workspace</h2>
+      <p class="text-secondary mb-0">Start or resume assigned assessments with auto-save enabled.</p>
+    </div>
+    <button class="btn btn-outline-primary" type="button" (click)="loadAssignments()" [disabled]="loading">Refresh</button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <h5 class="card-title">Assigned Assessments</h5>
+
+      <div *ngIf="loading" class="text-secondary">Loading assignments...</div>
+
+      <div class="table-responsive" *ngIf="!loading">
+        <table class="table align-middle mb-0" *ngIf="assignments.length; else noAssignments">
+          <thead>
+            <tr>
+              <th>Assessment</th>
+              <th>Status</th>
+              <th>Remaining Time</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let assignment of assignments">
+              <td>{{ assignment.assessmentTitle }}</td>
+              <td>
+                <span class="badge text-bg-secondary">{{ assignment.status }}</span>
+              </td>
+              <td>{{ assignment.remainingSeconds ? (assignment.remainingSeconds / 60 | number: '1.0-0') + ' min' : 'N/A' }}</td>
+              <td class="text-end">
+                <button
+                  class="btn btn-primary btn-sm"
+                  type="button"
+                  [disabled]="assignment.status === 'Submitted' || assignment.status === 'Evaluated'"
+                  (click)="openAssessment(assignment.candidateAssessmentId)">
+                  {{ assignment.status === 'InProgress' ? 'Resume' : 'Start' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ng-template #noAssignments>
+        <div class="alert alert-info mb-0">No assessments have been assigned yet.</div>
+      </ng-template>
+    </div>
+  </div>
+</section>
