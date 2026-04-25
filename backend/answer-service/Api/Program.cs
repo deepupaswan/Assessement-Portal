@@ -9,18 +9,20 @@ using Swashbuckle.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add CORS configuration for frontend
+// Add CORS configuration for frontend and docker containers
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
+        ?? new[] { "http://localhost:4200", "http://localhost:55942", "http://frontend" };
+    
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:4200", "http://localhost:55942")
+            .WithOrigins(allowedOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();
@@ -31,14 +33,31 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddInfrastructureServices(connectionString);
+
+// Configure MassTransit with RabbitMQ
+var rabbitmqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+var rabbitmqPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");
+var rabbitmqUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+var rabbitmqPassword = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<AnswerCreatedConsumer>();
-    x.UsingInMemory((context, cfg) => cfg.ConfigureEndpoints(context));
+    
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(new Uri($"rabbitmq://{rabbitmqHost}:{rabbitmqPort}"), h =>
+        {
+            h.Username(rabbitmqUser);
+            h.Password(rabbitmqPassword);
+        });
+        cfg.ConfigureEndpoints(context);
+    });
 });
 
 var app = builder.Build();
 
+// Auto-migrate database on startup
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AnswerDbContext>();
@@ -46,15 +65,19 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-app.UseHttpsRedirection();
+if (!app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("AllowFrontend");
-app.UseHttpsRedirection();
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.MapControllers();
 app.MapGet("/", () => Results.Redirect("/swagger"));
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy", service = "answer-service" }));
 
 app.Run();
 

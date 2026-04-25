@@ -1,5 +1,6 @@
 param(
-    [switch]$NoBuild
+    [switch]$NoBuild,
+    [string]$LaunchProfile = 'https'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -40,6 +41,10 @@ foreach ($service in $services) {
         $args = @('run', '--project', $projectPath)
     }
 
+    if (-not [string]::IsNullOrWhiteSpace($LaunchProfile)) {
+        $args += @('--launch-profile', $LaunchProfile)
+    }
+
     $process = Start-Process -FilePath 'dotnet' `
         -ArgumentList $args `
         -RedirectStandardOutput $stdoutLog `
@@ -54,7 +59,7 @@ foreach ($service in $services) {
         StdErr  = $stderrLog
     }
 
-    Write-Host "Started $($service.Name) (PID: $($process.Id))"
+    Write-Host "Started $($service.Name) (PID: $($process.Id), Profile: $LaunchProfile)"
 }
 
 $started | ConvertTo-Json | Set-Content -Path $pidFile
