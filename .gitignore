@@ -1,4 +1,4 @@
- n # OS / editor
+# OS / editor
 .DS_Store
 Thumbs.db
 .idea/
@@ -33,3 +33,7 @@ frontend/.sass-cache/
 
 # Misc local tooling
 **/Properties/launchSettings.json.user
+**/.service-pids.json
+
+# Local .NET SDK cache/telemetry
+.dotnet/
