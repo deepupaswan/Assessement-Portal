@@ -22,7 +22,12 @@ export class AuthService {
   constructor(private http: HttpClient) {
     const persistedUser = localStorage.getItem(this.storageKey);
     if (persistedUser) {
-      this.userSubject.next(JSON.parse(persistedUser) as AuthUser);
+      const user = this.tryParseUser(persistedUser);
+      this.userSubject.next(user);
+
+      if (!user) {
+        localStorage.removeItem(this.storageKey);
+      }
     }
   }
 
@@ -49,14 +54,57 @@ export class AuthService {
   }
 
   getUser(): AuthUser | null {
-    return this.userSubject.value;
+    const user = this.userSubject.value;
+    if (!user || this.isTokenExpired(user.token)) {
+      this.logout();
+      return null;
+    }
+
+    return user;
   }
 
   isAuthenticated(): boolean {
-    return !!this.userSubject.value?.token;
+    const user = this.userSubject.value;
+    return !!user?.token && !this.isTokenExpired(user.token);
   }
 
   logout(): void {
     this.setUser(null);
+  }
+
+  private tryParseUser(serializedUser: string): AuthUser | null {
+    try {
+      const parsed = JSON.parse(serializedUser) as AuthUser;
+      if (!parsed?.token || this.isTokenExpired(parsed.token)) {
+        return null;
+      }
+
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+
+  private isTokenExpired(token: string): boolean {
+    try {
+      const parts = token.split('.');
+      if (parts.length < 2) {
+        return true;
+      }
+
+      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+      const payloadJson = atob(padded);
+      const payload = JSON.parse(payloadJson) as { exp?: number };
+
+      if (!payload.exp) {
+        return true;
+      }
+
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+      return payload.exp <= nowInSeconds;
+    } catch {
+      return true;
+    }
   }
 }

@@ -35,6 +35,12 @@ public class CandidateService : ICandidateService
         return await _context.Candidates.FirstOrDefaultAsync(c => c.Id == id);
     }
 
+    public async Task<Candidate?> GetCandidateByEmailAsync(string email)
+    {
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        return await _context.Candidates.FirstOrDefaultAsync(c => c.Email.ToLower() == normalizedEmail);
+    }
+
     public async Task<IEnumerable<Candidate>> GetAllCandidatesAsync()
     {
         return await _context.Candidates.ToListAsync();

@@ -1,22 +1,24 @@
 using CandidateService.Application.Events;
 using CandidateService.Application.Services;
 using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace CandidateService.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class CandidatesController : ControllerBase
 {
     private readonly ICandidateService _candidateService;
     private readonly ICandidateAssessmentService _assessmentService;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<CandidatesController> _logger;
-    private readonly HttpClient _httpClient = new();
+    private readonly HttpClient _httpClient;
     private readonly string _assessmentServiceBaseUrl;
     private readonly string _resultServiceBaseUrl;
 
@@ -24,18 +26,21 @@ public class CandidatesController : ControllerBase
         ICandidateService candidateService,
         ICandidateAssessmentService assessmentService,
         IPublishEndpoint publishEndpoint,
+        IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
         ILogger<CandidatesController> logger)
     {
         _candidateService = candidateService;
         _assessmentService = assessmentService;
         _publishEndpoint = publishEndpoint;
+        _httpClient = httpClientFactory.CreateClient("InternalServices");
         _assessmentServiceBaseUrl = (configuration["ServiceUrls:AssessmentService"] ?? "http://localhost:5098").TrimEnd('/');
         _resultServiceBaseUrl = (configuration["ServiceUrls:ResultService"] ?? "http://localhost:5160").TrimEnd('/');
         _logger = logger;
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllCandidates()
     {
         var candidates = await _candidateService.GetAllCandidatesAsync();
@@ -43,6 +48,7 @@ public class CandidatesController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetCandidate(Guid id)
     {
         var candidate = await _candidateService.GetCandidateByIdAsync(id);
@@ -53,16 +59,22 @@ public class CandidatesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateCandidate([FromBody] CreateCandidateRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Email))
             return BadRequest("Name and Email are required");
+
+        var existingCandidate = await _candidateService.GetCandidateByEmailAsync(request.Email);
+        if (existingCandidate != null)
+            return Conflict(new { message = "Candidate with this email already exists" });
 
         var candidate = await _candidateService.CreateCandidateAsync(request.Name, request.Email);
         return CreatedAtAction(nameof(GetCandidate), new { id = candidate.Id }, candidate);
     }
 
     [HttpPost("{id}/assessments")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AssignAssessment(Guid id, [FromBody] AssignAssessmentRequest request)
     {
         var assignment = await _assessmentService.AssignAssessmentAsync(id, request.AssessmentId);
@@ -71,6 +83,7 @@ public class CandidatesController : ControllerBase
     }
 
     [HttpPost("assignments")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AssignAssessmentToCandidate([FromBody] AssignmentRequest request)
     {
         if (request.CandidateId == Guid.Empty || request.AssessmentId == Guid.Empty)
@@ -98,6 +111,7 @@ public class CandidatesController : ControllerBase
     }
 
     [HttpGet("{id}/assessments")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetCandidateAssessments(Guid id)
     {
         var assessments = await _assessmentService.GetCandidateAssessmentsAsync(id);
@@ -106,17 +120,12 @@ public class CandidatesController : ControllerBase
 
     // New endpoint: Get assignments for current user (all assignments for demo)
     [HttpGet("assignments/me")]
+    [Authorize(Roles = "Candidate")]
     public async Task<IActionResult> GetMyAssignments()
     {
         try
         {
-            var currentEmail = GetCurrentUserEmail();
-            if (string.IsNullOrWhiteSpace(currentEmail))
-                return Unauthorized(new { message = "Candidate identity is required" });
-
-            var allCandidates = await _candidateService.GetAllCandidatesAsync();
-            var currentCandidate = allCandidates.FirstOrDefault(c =>
-                string.Equals(c.Email, currentEmail, StringComparison.OrdinalIgnoreCase));
+            var currentCandidate = await GetCurrentCandidateAsync();
 
             if (currentCandidate == null)
                 return Ok(Array.Empty<CandidateAssignmentDto>());
@@ -131,16 +140,25 @@ public class CandidatesController : ControllerBase
         }
         catch (Exception ex)
         {
-            return BadRequest(new { message = ex.Message });
+            _logger.LogError(ex, "Unable to load assignments for current candidate.");
+            return StatusCode(500, new { message = "Unable to load assignments" });
         }
     }
 
     [HttpGet("assessments/{candidateAssessmentId}/session")]
+    [Authorize(Roles = "Candidate")]
     public async Task<IActionResult> GetAssessmentSession(Guid candidateAssessmentId)
     {
+        var currentCandidate = await GetCurrentCandidateAsync();
+        if (currentCandidate == null)
+            return Unauthorized(new { message = "Candidate identity is required" });
+
         var assignment = await _assessmentService.GetAssignmentAsync(candidateAssessmentId);
         if (assignment == null)
             return NotFound(new { message = "Assignment not found" });
+
+        if (assignment.CandidateId != currentCandidate.Id)
+            return Forbid();
 
         var assessment = await GetAssessmentAsync(assignment.AssessmentId);
         if (assessment == null)
@@ -177,21 +195,37 @@ public class CandidatesController : ControllerBase
     }
 
     [HttpPost("assessments/{candidateAssessmentId}/start")]
+    [Authorize(Roles = "Candidate")]
     public async Task<IActionResult> StartAssessment(Guid candidateAssessmentId)
     {
+        var currentCandidate = await GetCurrentCandidateAsync();
+        if (currentCandidate == null)
+            return Unauthorized(new { message = "Candidate identity is required" });
+
         var assignment = await _assessmentService.GetAssignmentAsync(candidateAssessmentId);
         if (assignment == null)
             return NotFound(new { message = "Assignment not found" });
+
+        if (assignment.CandidateId != currentCandidate.Id)
+            return Forbid();
 
         return NoContent();
     }
 
     [HttpPost("assessments/{candidateAssessmentId}/submit")]
+    [Authorize(Roles = "Candidate")]
     public async Task<IActionResult> SubmitAssessment(Guid candidateAssessmentId)
     {
+        var currentCandidate = await GetCurrentCandidateAsync();
+        if (currentCandidate == null)
+            return Unauthorized(new { message = "Candidate identity is required" });
+
         var assignment = await _assessmentService.GetAssignmentAsync(candidateAssessmentId);
         if (assignment == null)
             return NotFound(new { message = "Assignment not found" });
+
+        if (assignment.CandidateId != currentCandidate.Id)
+            return Forbid();
 
         var success = await _assessmentService.CompleteAssessmentAsync(candidateAssessmentId);
         if (!success)
@@ -199,9 +233,10 @@ public class CandidatesController : ControllerBase
 
         try
         {
-            var response = await _httpClient.PostAsync(
-                $"{_resultServiceBaseUrl}/api/results/assessments/{assignment.AssessmentId}/candidates/{assignment.CandidateId}/calculate",
-                null);
+            using var request = CreateAuthorizedRequest(
+                HttpMethod.Post,
+                $"{_resultServiceBaseUrl}/api/results/assessments/{assignment.AssessmentId}/candidates/{assignment.CandidateId}/calculate");
+            using var response = await _httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -226,6 +261,7 @@ public class CandidatesController : ControllerBase
     }
 
     [HttpGet("live-progress")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetLiveProgress()
     {
         var candidates = await _candidateService.GetAllCandidatesAsync();
@@ -254,8 +290,20 @@ public class CandidatesController : ControllerBase
     }
 
     [HttpPost("suspicious-activity")]
-    public IActionResult ReportSuspiciousActivity([FromBody] SuspiciousActivityRequest request)
+    [Authorize(Roles = "Candidate")]
+    public async Task<IActionResult> ReportSuspiciousActivity([FromBody] SuspiciousActivityRequest request)
     {
+        var currentCandidate = await GetCurrentCandidateAsync();
+        if (currentCandidate == null)
+            return Unauthorized(new { message = "Candidate identity is required" });
+
+        var assignment = await _assessmentService.GetAssignmentAsync(request.CandidateAssessmentId);
+        if (assignment == null)
+            return NotFound(new { message = "Assignment not found" });
+
+        if (assignment.CandidateId != currentCandidate.Id)
+            return Forbid();
+
         _logger.LogWarning(
             "Suspicious activity for assignment {CandidateAssessmentId}: {ViolationType} {Metadata}",
             request.CandidateAssessmentId,
@@ -287,8 +335,21 @@ public class CandidatesController : ControllerBase
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<AssessmentDto>(
+            using var request = CreateAuthorizedRequest(
+                HttpMethod.Get,
                 $"{_assessmentServiceBaseUrl}/api/assessments/{assessmentId}");
+            using var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "Assessment service returned {StatusCode} for assessment {AssessmentId}",
+                    response.StatusCode,
+                    assessmentId);
+                return null;
+            }
+
+            return await response.Content.ReadFromJsonAsync<AssessmentDto>();
         }
         catch (Exception ex)
         {
@@ -301,9 +362,21 @@ public class CandidatesController : ControllerBase
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<List<QuestionDto>>(
-                $"{_assessmentServiceBaseUrl}/api/assessments/{assessmentId}/questions")
-                ?? new List<QuestionDto>();
+            using var request = CreateAuthorizedRequest(
+                HttpMethod.Get,
+                $"{_assessmentServiceBaseUrl}/api/assessments/{assessmentId}/questions");
+            using var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "Assessment service returned {StatusCode} for questions of assessment {AssessmentId}",
+                    response.StatusCode,
+                    assessmentId);
+                return new List<QuestionDto>();
+            }
+
+            return await response.Content.ReadFromJsonAsync<List<QuestionDto>>() ?? new List<QuestionDto>();
         }
         catch (Exception ex)
         {
@@ -324,13 +397,35 @@ public class CandidatesController : ControllerBase
 
     private string? GetCurrentUserEmail()
     {
-        var authorization = Request.Headers.Authorization.ToString();
-        if (string.IsNullOrWhiteSpace(authorization) || !authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        return User.FindFirstValue(ClaimTypes.Email);
+    }
+
+    private async Task<CandidateService.Domain.Entities.Candidate?> GetCurrentCandidateAsync()
+    {
+        var currentEmail = GetCurrentUserEmail();
+        if (string.IsNullOrWhiteSpace(currentEmail))
             return null;
 
-        var token = authorization["Bearer ".Length..].Trim();
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
-        return jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email || c.Type == JwtRegisteredClaimNames.Email)?.Value;
+        return await _candidateService.GetCandidateByEmailAsync(currentEmail);
+    }
+
+    private HttpRequestMessage CreateAuthorizedRequest(HttpMethod method, string requestUri)
+    {
+        var request = new HttpRequestMessage(method, requestUri);
+        var token = Request.Headers.Authorization.ToString();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return request;
+        }
+
+        if (AuthenticationHeaderValue.TryParse(token, out var parsed) &&
+            "Bearer".Equals(parsed.Scheme, StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrWhiteSpace(parsed.Parameter))
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parsed.Parameter);
+        }
+
+        return request;
     }
 }
 

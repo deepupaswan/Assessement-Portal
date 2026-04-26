@@ -2,7 +2,10 @@ using CandidateService.Application.Services;
 using CandidateService.Infrastructure.Services;
 using CandidateService.Infrastructure.Persistence;
 using MassTransit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +38,32 @@ builder.Services.AddDbContext<CandidateService.Infrastructure.Persistence.Candid
 
 builder.Services.AddScoped<ICandidateService, CandidateService.Infrastructure.Services.CandidateService>();
 builder.Services.AddScoped<ICandidateAssessmentService, CandidateAssessmentService>();
+builder.Services.AddHttpContextAccessor();
+
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "IdentityService";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "AssessmentPortal";
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddHttpClient("InternalServices");
 
 // Configure MassTransit with RabbitMQ for domain event publishing
 var rabbitmqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
@@ -67,6 +96,8 @@ if (!app.Environment.IsProduction())
 }
 
 app.UseCors("AllowFrontend");
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapControllers();

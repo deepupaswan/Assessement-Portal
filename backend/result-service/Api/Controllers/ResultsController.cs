@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ResultService.Application.DTOs;
 using ResultService.Application.Services;
 using ResultService.Domain.Entities;
@@ -7,6 +8,7 @@ namespace ResultService.Api.Controllers
 {
     [ApiController]
     [Route("api/results")]
+    [Authorize]
     public class ResultsController : ControllerBase
     {
         private readonly IResultService _resultService;
@@ -22,6 +24,7 @@ namespace ResultService.Api.Controllers
         /// Get all results
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll()
         {
             try
@@ -38,6 +41,7 @@ namespace ResultService.Api.Controllers
         }
 
         [HttpGet("analytics/overview")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAnalyticsOverview()
         {
             try
@@ -63,6 +67,7 @@ namespace ResultService.Api.Controllers
         /// Get result by ID
         /// </summary>
         [HttpGet("{resultId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetById(Guid resultId)
         {
             try
@@ -85,6 +90,7 @@ namespace ResultService.Api.Controllers
         /// Get results for a candidate
         /// </summary>
         [HttpGet("candidates/{candidateId}")]
+        [Authorize(Roles = "Admin,Candidate")]
         public async Task<IActionResult> GetCandidateResults(Guid candidateId)
         {
             try
@@ -123,6 +129,7 @@ namespace ResultService.Api.Controllers
         /// Get results for an assessment
         /// </summary>
         [HttpGet("assessments/{assessmentId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAssessmentResults(Guid assessmentId)
         {
             try
@@ -152,6 +159,7 @@ namespace ResultService.Api.Controllers
         /// Get result for a specific candidate and assessment
         /// </summary>
         [HttpGet("assessments/{assessmentId}/candidates/{candidateId}")]
+        [Authorize(Roles = "Admin,Candidate")]
         public async Task<IActionResult> GetCandidateAssessmentResult(Guid assessmentId, Guid candidateId)
         {
             try
@@ -175,6 +183,7 @@ namespace ResultService.Api.Controllers
         /// Calculate and publish result for a candidate in an assessment
         /// </summary>
         [HttpPost("assessments/{assessmentId}/candidates/{candidateId}/calculate")]
+        [Authorize(Roles = "Admin,Candidate")]
         public async Task<IActionResult> CalculateAndPublishResult(Guid assessmentId, Guid candidateId)
         {
             try
@@ -195,6 +204,7 @@ namespace ResultService.Api.Controllers
         /// Publish a result
         /// </summary>
         [HttpPost("{resultId}/publish")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PublishResult(Guid resultId)
         {
             try
@@ -214,6 +224,7 @@ namespace ResultService.Api.Controllers
         /// Get passed candidates for an assessment
         /// </summary>
         [HttpGet("assessments/{assessmentId}/passed")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetPassedCandidates(Guid assessmentId)
         {
             try
@@ -233,6 +244,7 @@ namespace ResultService.Api.Controllers
         /// Get failed candidates for an assessment
         /// </summary>
         [HttpGet("assessments/{assessmentId}/failed")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetFailedCandidates(Guid assessmentId)
         {
             try

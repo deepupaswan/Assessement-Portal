@@ -2,7 +2,10 @@ using AssessmentService.Application.Services;
 using AssessmentService.Infrastructure.Services;
 using AssessmentService.Infrastructure.Persistence;
 using AssessmentService.Api.Hubs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +42,29 @@ builder.Services.AddDbContext<AssessmentDbContext>(options =>
 builder.Services.AddScoped<IAssessmentService, AssessmentService.Infrastructure.Services.AssessmentService>();
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "IdentityService";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "AssessmentPortal";
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -52,6 +78,8 @@ if (!app.Environment.IsProduction())
 }
 
 app.UseCors("AllowFrontend");
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapControllers();

@@ -1,10 +1,12 @@
 using AssessmentService.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AssessmentService.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AssessmentsController : ControllerBase
 {
     private readonly IAssessmentService _assessmentService;
@@ -15,6 +17,7 @@ public class AssessmentsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllAssessments()
     {
         var assessments = await _assessmentService.GetAllAssessmentsAsync();
@@ -22,6 +25,7 @@ public class AssessmentsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "Admin,Candidate")]
     public async Task<IActionResult> GetAssessment(Guid id)
     {
         var assessment = await _assessmentService.GetAssessmentByIdAsync(id);
@@ -32,6 +36,7 @@ public class AssessmentsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateAssessment([FromBody] CreateAssessmentRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
@@ -47,6 +52,7 @@ public class AssessmentsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateAssessment(Guid id, [FromBody] UpdateAssessmentRequest request)
     {
         var success = await _assessmentService.UpdateAssessmentAsync(
@@ -62,6 +68,7 @@ public class AssessmentsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteAssessment(Guid id)
     {
         var success = await _assessmentService.DeleteAssessmentAsync(id);

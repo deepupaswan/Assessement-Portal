@@ -1,12 +1,14 @@
 using AnswerService.Application.DTOs;
 using AnswerService.Application.Services;
 using AnswerService.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AnswerService.Api.Controllers
 {
     [ApiController]
     [Route("api/assessments/{assessmentId}/answers")]
+    [Authorize]
     public class AnswersController : ControllerBase
     {
         private readonly IAnswerService _answerService;
@@ -22,6 +24,7 @@ namespace AnswerService.Api.Controllers
         /// Get all answers for an assessment
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAnswersByAssessment(Guid assessmentId)
         {
             try
@@ -41,6 +44,7 @@ namespace AnswerService.Api.Controllers
         /// Get answers for a specific candidate in an assessment
         /// </summary>
         [HttpGet("candidates/{candidateId}")]
+        [Authorize(Roles = "Admin,Candidate")]
         public async Task<IActionResult> GetCandidateAnswers(Guid assessmentId, Guid candidateId)
         {
             try
@@ -68,6 +72,7 @@ namespace AnswerService.Api.Controllers
         /// Get a specific answer
         /// </summary>
         [HttpGet("{answerId}")]
+        [Authorize(Roles = "Admin,Candidate")]
         public async Task<IActionResult> GetAnswer(Guid assessmentId, Guid answerId)
         {
             try
@@ -93,6 +98,7 @@ namespace AnswerService.Api.Controllers
         /// Submit a single answer
         /// </summary>
         [HttpPost("submit")]
+        [Authorize(Roles = "Candidate")]
         public async Task<IActionResult> SubmitAnswer(Guid assessmentId, [FromBody] SubmitAnswerRequest request)
         {
             try
@@ -129,6 +135,7 @@ namespace AnswerService.Api.Controllers
         /// Submit multiple answers in batch
         /// </summary>
         [HttpPost("submit-batch")]
+        [Authorize(Roles = "Candidate")]
         public async Task<IActionResult> SubmitAnswersBatch(Guid assessmentId, [FromBody] BatchSubmitAnswersRequest request)
         {
             try
@@ -183,6 +190,7 @@ namespace AnswerService.Api.Controllers
         /// Save candidate answers from the Angular assessment page.
         /// </summary>
         [HttpPost("/api/answers/bulk-save")]
+        [Authorize(Roles = "Candidate")]
         public async Task<IActionResult> BulkSaveAnswers([FromBody] BulkSaveAnswersRequest request)
         {
             try
@@ -232,6 +240,7 @@ namespace AnswerService.Api.Controllers
         /// Grade an answer
         /// </summary>
         [HttpPost("{answerId}/grade")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GradeAnswer(Guid assessmentId, Guid answerId, [FromBody] GradeAnswerRequest request)
         {
             try

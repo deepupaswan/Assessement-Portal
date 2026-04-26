@@ -1,12 +1,14 @@
 using AssessmentService.Application.DTOs;
 using AssessmentService.Application.Services;
 using AssessmentService.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AssessmentService.Api.Controllers;
 
 [ApiController]
 [Route("api/assessments/{assessmentId}/questions")]
+[Authorize]
 public class QuestionsController : ControllerBase
 {
     private readonly IQuestionService _questionService;
@@ -17,6 +19,7 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin,Candidate")]
     public async Task<IActionResult> GetQuestions(Guid assessmentId)
     {
         var questions = await _questionService.GetQuestionsByAssessmentIdAsync(assessmentId);
@@ -44,6 +47,7 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpGet("{questionId}")]
+    [Authorize(Roles = "Admin,Candidate")]
     public async Task<IActionResult> GetQuestion(Guid assessmentId, Guid questionId)
     {
         var question = await _questionService.GetQuestionByIdAsync(questionId);
@@ -74,6 +78,7 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateQuestion(Guid assessmentId, [FromBody] CreateQuestionRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Text))
@@ -139,6 +144,7 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpPut("{questionId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateQuestion(Guid assessmentId, Guid questionId, [FromBody] UpdateQuestionRequest request)
     {
         var question = await _questionService.GetQuestionByIdAsync(questionId);
@@ -153,6 +159,7 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpDelete("{questionId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteQuestion(Guid assessmentId, Guid questionId)
     {
         var question = await _questionService.GetQuestionByIdAsync(questionId);
@@ -165,6 +172,7 @@ public class QuestionsController : ControllerBase
 
     // Options endpoints
     [HttpPost("{questionId}/options")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AddOption(Guid assessmentId, Guid questionId, [FromBody] CreateQuestionOptionRequest request)
     {
         var question = await _questionService.GetQuestionByIdAsync(questionId);
@@ -188,6 +196,7 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpPut("{questionId}/options/{optionId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateOption(Guid assessmentId, Guid questionId, Guid optionId, [FromBody] UpdateQuestionOptionRequest request)
     {
         var question = await _questionService.GetQuestionByIdAsync(questionId);
@@ -202,6 +211,7 @@ public class QuestionsController : ControllerBase
     }
 
     [HttpDelete("{questionId}/options/{optionId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteOption(Guid assessmentId, Guid questionId, Guid optionId)
     {
         var question = await _questionService.GetQuestionByIdAsync(questionId);
