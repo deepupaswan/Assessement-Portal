@@ -10,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddMemoryCache();
 
 // Add CORS configuration for frontend and docker containers
 builder.Services.AddCors(options =>
@@ -40,7 +41,8 @@ var rabbitmqPassword = builder.Configuration["RabbitMQ:Password"] ?? "guest";
 
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<ResultCreatedConsumer>();
+    x.AddConsumer<AnswerCreatedConsumer, AnswerCreatedConsumerDefinition>();
+    x.AddConsumer<CandidateAssessmentAssignedConsumer, CandidateAssessmentAssignedConsumerDefinition>();
     
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -49,6 +51,7 @@ builder.Services.AddMassTransit(x =>
             h.Username(rabbitmqUser);
             h.Password(rabbitmqPassword);
         });
+
         cfg.ConfigureEndpoints(context);
     });
 });

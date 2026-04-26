@@ -159,6 +159,8 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      ServiceUrls__AssessmentService: "http://assessment-service"
+      ServiceUrls__ResultService: "http://result-service"
     ports:
       - "7143:80"
     networks:
@@ -190,6 +192,8 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      ServiceUrls__AnswerService: "http://answer-service"
+      ServiceUrls__AssessmentService: "http://assessment-service"
     ports:
       - "7144:80"
     networks:

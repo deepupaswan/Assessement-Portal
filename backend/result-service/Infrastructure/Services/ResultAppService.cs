@@ -1,5 +1,6 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ResultService.Application.Events;
 using ResultService.Application.Services;
@@ -15,17 +16,22 @@ public class ResultAppService : IResultService
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<ResultAppService> _logger;
     private readonly HttpClient _httpClient;
+    private readonly string _answerServiceBaseUrl;
+    private readonly string _assessmentServiceBaseUrl;
 
     public ResultAppService(
         ResultDbContext dbContext,
         IPublishEndpoint publishEndpoint,
         ILogger<ResultAppService> logger,
-        HttpClient httpClient)
+        HttpClient httpClient,
+        IConfiguration configuration)
     {
         _dbContext = dbContext;
         _publishEndpoint = publishEndpoint;
         _logger = logger;
         _httpClient = httpClient;
+        _answerServiceBaseUrl = (configuration["ServiceUrls:AnswerService"] ?? "http://localhost:5118").TrimEnd('/');
+        _assessmentServiceBaseUrl = (configuration["ServiceUrls:AssessmentService"] ?? "http://localhost:5098").TrimEnd('/');
     }
 
     public async Task<IReadOnlyList<Result>> GetAllAsync()
@@ -226,7 +232,7 @@ public class ResultAppService : IResultService
         try
         {
             var response = await _httpClient.GetAsync(
-                $"http://localhost:5118/api/assessments/{assessmentId}/answers/candidates/{candidateId}");
+                $"{_answerServiceBaseUrl}/api/assessments/{assessmentId}/answers/candidates/{candidateId}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -251,7 +257,7 @@ public class ResultAppService : IResultService
         try
         {
             var questions = await _httpClient.GetFromJsonAsync<List<QuestionDto>>(
-                $"http://localhost:5098/api/assessments/{assessmentId}/questions");
+                $"{_assessmentServiceBaseUrl}/api/assessments/{assessmentId}/questions");
 
             return questions ?? new List<QuestionDto>();
         }

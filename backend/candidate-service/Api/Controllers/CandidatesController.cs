@@ -1,4 +1,6 @@
+using CandidateService.Application.Events;
 using CandidateService.Application.Services;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -12,16 +14,24 @@ public class CandidatesController : ControllerBase
 {
     private readonly ICandidateService _candidateService;
     private readonly ICandidateAssessmentService _assessmentService;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<CandidatesController> _logger;
     private readonly HttpClient _httpClient = new();
+    private readonly string _assessmentServiceBaseUrl;
+    private readonly string _resultServiceBaseUrl;
 
     public CandidatesController(
         ICandidateService candidateService,
         ICandidateAssessmentService assessmentService,
+        IPublishEndpoint publishEndpoint,
+        IConfiguration configuration,
         ILogger<CandidatesController> logger)
     {
         _candidateService = candidateService;
         _assessmentService = assessmentService;
+        _publishEndpoint = publishEndpoint;
+        _assessmentServiceBaseUrl = (configuration["ServiceUrls:AssessmentService"] ?? "http://localhost:5098").TrimEnd('/');
+        _resultServiceBaseUrl = (configuration["ServiceUrls:ResultService"] ?? "http://localhost:5160").TrimEnd('/');
         _logger = logger;
     }
 
@@ -56,6 +66,7 @@ public class CandidatesController : ControllerBase
     public async Task<IActionResult> AssignAssessment(Guid id, [FromBody] AssignAssessmentRequest request)
     {
         var assignment = await _assessmentService.AssignAssessmentAsync(id, request.AssessmentId);
+        await PublishAssignmentCreatedEventAsync(assignment);
         return Ok(assignment);
     }
 
@@ -70,8 +81,20 @@ public class CandidatesController : ControllerBase
             return NotFound(new { message = "Candidate not found" });
 
         var assignment = await _assessmentService.AssignAssessmentAsync(request.CandidateId, request.AssessmentId);
+        await PublishAssignmentCreatedEventAsync(assignment);
         var response = await MapAssignmentAsync(assignment);
         return Ok(response);
+    }
+
+    private async Task PublishAssignmentCreatedEventAsync(CandidateService.Domain.Entities.CandidateAssessment assignment)
+    {
+        await _publishEndpoint.Publish(new CandidateAssessmentAssignedEvent
+        {
+            CandidateAssessmentId = assignment.Id,
+            CandidateId = assignment.CandidateId,
+            AssessmentId = assignment.AssessmentId,
+            AssignedAt = assignment.AssignedAt
+        });
     }
 
     [HttpGet("{id}/assessments")]
@@ -177,7 +200,7 @@ public class CandidatesController : ControllerBase
         try
         {
             var response = await _httpClient.PostAsync(
-                $"http://localhost:5160/api/results/assessments/{assignment.AssessmentId}/candidates/{assignment.CandidateId}/calculate",
+                $"{_resultServiceBaseUrl}/api/results/assessments/{assignment.AssessmentId}/candidates/{assignment.CandidateId}/calculate",
                 null);
 
             if (!response.IsSuccessStatusCode)
@@ -265,7 +288,7 @@ public class CandidatesController : ControllerBase
         try
         {
             return await _httpClient.GetFromJsonAsync<AssessmentDto>(
-                $"http://localhost:5098/api/assessments/{assessmentId}");
+                $"{_assessmentServiceBaseUrl}/api/assessments/{assessmentId}");
         }
         catch (Exception ex)
         {
@@ -279,7 +302,7 @@ public class CandidatesController : ControllerBase
         try
         {
             return await _httpClient.GetFromJsonAsync<List<QuestionDto>>(
-                $"http://localhost:5098/api/assessments/{assessmentId}/questions")
+                $"{_assessmentServiceBaseUrl}/api/assessments/{assessmentId}/questions")
                 ?? new List<QuestionDto>();
         }
         catch (Exception ex)

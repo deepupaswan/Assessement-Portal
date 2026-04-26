@@ -1,6 +1,7 @@
 using CandidateService.Application.Services;
 using CandidateService.Infrastructure.Services;
 using CandidateService.Infrastructure.Persistence;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +35,24 @@ builder.Services.AddDbContext<CandidateService.Infrastructure.Persistence.Candid
 
 builder.Services.AddScoped<ICandidateService, CandidateService.Infrastructure.Services.CandidateService>();
 builder.Services.AddScoped<ICandidateAssessmentService, CandidateAssessmentService>();
+
+// Configure MassTransit with RabbitMQ for domain event publishing
+var rabbitmqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+var rabbitmqPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");
+var rabbitmqUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+var rabbitmqPassword = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(new Uri($"rabbitmq://{rabbitmqHost}:{rabbitmqPort}"), h =>
+        {
+            h.Username(rabbitmqUser);
+            h.Password(rabbitmqPassword);
+        });
+    });
+});
 
 var app = builder.Build();
 

@@ -1,9 +1,0 @@
-namespace CandidateService.Api.Events
-{
-    public class CandidateCreatedEvent
-    {
-        public Guid CandidateId { get; set; }
-        public string Email { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
-    }
-}

@@ -1,4 +1,3 @@
-using AnswerService.Api.Events;
 using AnswerService.Application.Services;
 using AnswerService.Infrastructure;
 using AnswerService.Infrastructure.Persistence;
@@ -42,8 +41,6 @@ var rabbitmqPassword = builder.Configuration["RabbitMQ:Password"] ?? "guest";
 
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<AnswerCreatedConsumer>();
-    
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host(new Uri($"rabbitmq://{rabbitmqHost}:{rabbitmqPort}"), h =>

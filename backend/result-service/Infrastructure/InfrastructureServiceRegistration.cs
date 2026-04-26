@@ -15,7 +15,8 @@ public static class InfrastructureServiceRegistration
                 serviceProvider.GetRequiredService<ResultDbContext>(),
                 serviceProvider.GetRequiredService<MassTransit.IPublishEndpoint>(),
                 serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ResultAppService>>(),
-                new HttpClient()));
+                new HttpClient(),
+                serviceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()));
         return services;
     }
 }
