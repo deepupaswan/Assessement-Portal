@@ -65,6 +65,7 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      Jwt__Key: ${JWT_KEY:-ChangeThisIdentityJwtSigningKeyToSomethingSecure12345}
     ports:
       - "7140:80"
     networks:
