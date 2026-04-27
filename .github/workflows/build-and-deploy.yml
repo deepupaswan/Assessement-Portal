@@ -20,6 +20,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       has_services: ${{ steps.set-matrix.outputs.has_services }}
+      service_names: ${{ steps.set-matrix.outputs.service_names }}
 
     steps:
       - name: Checkout
@@ -44,16 +45,19 @@ jobs:
           ]'
 
           NOOP='[{"name":"__skip__","dockerfile":"","context":"."}]'
+          ALL_SERVICE_NAMES='identity-service, answer-service, assessment-service, candidate-service, result-service, api-gateway, frontend'
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "matrix=$(echo "$ALL_SERVICES" | jq -c .)" >> "$GITHUB_OUTPUT"
             echo "has_services=true" >> "$GITHUB_OUTPUT"
+            echo "service_names=$ALL_SERVICE_NAMES" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
             echo "matrix=$(echo "$ALL_SERVICES" | jq -c .)" >> "$GITHUB_OUTPUT"
             echo "has_services=true" >> "$GITHUB_OUTPUT"
+            echo "service_names=$ALL_SERVICE_NAMES" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -98,12 +102,14 @@ jobs:
           if [ "$build_all" = "true" ]; then
             echo "matrix=$(echo "$ALL_SERVICES" | jq -c .)" >> "$GITHUB_OUTPUT"
             echo "has_services=true" >> "$GITHUB_OUTPUT"
+            echo "service_names=$ALL_SERVICE_NAMES" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if [ "${#selected[@]}" -eq 0 ]; then
             echo "matrix=$(echo "$NOOP" | jq -c .)" >> "$GITHUB_OUTPUT"
             echo "has_services=false" >> "$GITHUB_OUTPUT"
+            echo "service_names=none" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -113,9 +119,12 @@ jobs:
           if [ "$FILTERED" = "[]" ]; then
             echo "matrix=$(echo "$NOOP" | jq -c .)" >> "$GITHUB_OUTPUT"
             echo "has_services=false" >> "$GITHUB_OUTPUT"
+            echo "service_names=none" >> "$GITHUB_OUTPUT"
           else
+            SERVICE_NAMES="$(jq -r 'map(.name) | sort | join(", ")' <<< "$FILTERED")"
             echo "matrix=$FILTERED" >> "$GITHUB_OUTPUT"
             echo "has_services=true" >> "$GITHUB_OUTPUT"
+            echo "service_names=$SERVICE_NAMES" >> "$GITHUB_OUTPUT"
           fi
 
   build-and-push:
@@ -128,6 +137,9 @@ jobs:
         include: ${{ fromJson(needs.determine-services.outputs.matrix) }}
 
     steps:
+      - name: Build selection summary
+        run: echo "Selected services: ${{ needs.determine-services.outputs.service_names }}"
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -165,6 +177,9 @@ jobs:
       - build-and-push
 
     steps:
+      - name: Deploy selection summary
+        run: echo "Deploying services: ${{ needs.determine-services.outputs.service_names }}"
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
