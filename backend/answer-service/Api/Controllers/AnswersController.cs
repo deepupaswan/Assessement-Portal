@@ -12,12 +12,10 @@ namespace AnswerService.Api.Controllers
     public class AnswersController : ControllerBase
     {
         private readonly IAnswerService _answerService;
-        private readonly ILogger<AnswersController> _logger;
 
-        public AnswersController(IAnswerService answerService, ILogger<AnswersController> logger)
+        public AnswersController(IAnswerService answerService)
         {
             _answerService = answerService;
-            _logger = logger;
         }
 
         /// <summary>
@@ -27,17 +25,9 @@ namespace AnswerService.Api.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAnswersByAssessment(Guid assessmentId)
         {
-            try
-            {
-                var answers = await _answerService.GetByAssessmentIdAsync(assessmentId);
-                var mapper = MapToDto(assessmentId);
-                return Ok(answers.Select(mapper).ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting answers for assessment {AssessmentId}", assessmentId);
-                return StatusCode(500, new { message = "Failed to get answers" });
-            }
+            var answers = await _answerService.GetByAssessmentIdAsync(assessmentId);
+            var mapper = MapToDto(assessmentId);
+            return Ok(answers.Select(mapper).ToList());
         }
 
         /// <summary>
@@ -47,25 +37,17 @@ namespace AnswerService.Api.Controllers
         [Authorize(Roles = "Admin,Candidate")]
         public async Task<IActionResult> GetCandidateAnswers(Guid assessmentId, Guid candidateId)
         {
-            try
+            var answers = await _answerService.GetByCandidateAndAssessmentAsync(candidateId, assessmentId);
+            var mapper = MapToDto(assessmentId);
+            var response = new CandidateAnswersResponse
             {
-                var answers = await _answerService.GetByCandidateAndAssessmentAsync(candidateId, assessmentId);
-                var mapper = MapToDto(assessmentId);
-                var response = new CandidateAnswersResponse
-                {
-                    CandidateId = candidateId,
-                    AssessmentId = assessmentId,
-                    Answers = answers.Select(mapper).ToList(),
-                    TotalScore = answers.Sum(a => a.PointsObtained ?? 0),
-                    SubmittedAt = answers.FirstOrDefault()?.SubmittedAt
-                };
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting answers for candidate {CandidateId} in assessment {AssessmentId}", candidateId, assessmentId);
-                return StatusCode(500, new { message = "Failed to get candidate answers" });
-            }
+                CandidateId = candidateId,
+                AssessmentId = assessmentId,
+                Answers = answers.Select(mapper).ToList(),
+                TotalScore = answers.Sum(a => a.PointsObtained ?? 0),
+                SubmittedAt = answers.FirstOrDefault()?.SubmittedAt
+            };
+            return Ok(response);
         }
 
         /// <summary>
@@ -75,23 +57,15 @@ namespace AnswerService.Api.Controllers
         [Authorize(Roles = "Admin,Candidate")]
         public async Task<IActionResult> GetAnswer(Guid assessmentId, Guid answerId)
         {
-            try
-            {
-                var answer = await _answerService.GetByIdAsync(answerId);
-                if (answer == null)
-                    return NotFound(new { message = "Answer not found" });
+            var answer = await _answerService.GetByIdAsync(answerId);
+            if (answer == null)
+                return NotFound(new { message = "Answer not found" });
 
-                if (answer.AssessmentId != assessmentId)
-                    return BadRequest(new { message = "Answer does not belong to this assessment" });
+            if (answer.AssessmentId != assessmentId)
+                return BadRequest(new { message = "Answer does not belong to this assessment" });
 
-                var mapper = MapToDto(assessmentId);
-                return Ok(mapper(answer));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting answer {AnswerId}", answerId);
-                return StatusCode(500, new { message = "Failed to get answer" });
-            }
+            var mapper = MapToDto(assessmentId);
+            return Ok(mapper(answer));
         }
 
         /// <summary>
@@ -101,34 +75,22 @@ namespace AnswerService.Api.Controllers
         [Authorize(Roles = "Candidate")]
         public async Task<IActionResult> SubmitAnswer(Guid assessmentId, [FromBody] SubmitAnswerRequest request)
         {
-            try
-            {
-                if (assessmentId != request.AssessmentId)
-                    return BadRequest(new { message = "Assessment ID mismatch" });
+            if (assessmentId != request.AssessmentId)
+                return BadRequest(new { message = "Assessment ID mismatch" });
 
-                if (string.IsNullOrWhiteSpace(request.AnswerText) && request.SelectedOptionId == null)
-                    return BadRequest(new { message = "Either answer text or selected option must be provided" });
+            if (string.IsNullOrWhiteSpace(request.AnswerText) && request.SelectedOptionId == null)
+                return BadRequest(new { message = "Either answer text or selected option must be provided" });
 
-                var answer = await _answerService.SubmitAnswerAsync(
-                    request.AssessmentId,
-                    request.CandidateId,
-                    request.QuestionId,
-                    request.SelectedOptionId,
-                    request.AnswerText
-                );
+            var answer = await _answerService.SubmitAnswerAsync(
+                request.AssessmentId,
+                request.CandidateId,
+                request.QuestionId,
+                request.SelectedOptionId,
+                request.AnswerText
+            );
 
-                var mapper = MapToDto(assessmentId);
-                return CreatedAtAction(nameof(GetAnswer), new { assessmentId, answerId = answer.Id }, mapper(answer));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error submitting answer");
-                return StatusCode(500, new { message = "Failed to submit answer" });
-            }
+            var mapper = MapToDto(assessmentId);
+            return CreatedAtAction(nameof(GetAnswer), new { assessmentId, answerId = answer.Id }, mapper(answer));
         }
 
         /// <summary>
@@ -138,52 +100,40 @@ namespace AnswerService.Api.Controllers
         [Authorize(Roles = "Candidate")]
         public async Task<IActionResult> SubmitAnswersBatch(Guid assessmentId, [FromBody] BatchSubmitAnswersRequest request)
         {
-            try
+            if (assessmentId != request.AssessmentId)
+                return BadRequest(new { message = "Assessment ID mismatch" });
+
+            if (!request.Answers.Any())
+                return BadRequest(new { message = "No answers to submit" });
+
+            var submittedAnswers = new List<AnswerDto>();
+            var mapper = MapToDto(assessmentId);
+            foreach (var answerRequest in request.Answers)
             {
-                if (assessmentId != request.AssessmentId)
-                    return BadRequest(new { message = "Assessment ID mismatch" });
+                var requestAssessmentId = answerRequest.AssessmentId == Guid.Empty
+                    ? request.AssessmentId
+                    : answerRequest.AssessmentId;
+                var requestCandidateId = answerRequest.CandidateId == Guid.Empty
+                    ? request.CandidateId
+                    : answerRequest.CandidateId;
 
-                if (!request.Answers.Any())
-                    return BadRequest(new { message = "No answers to submit" });
+                if (requestAssessmentId != request.AssessmentId)
+                    return BadRequest(new { message = "All answers must belong to the batch assessment" });
 
-                var submittedAnswers = new List<AnswerDto>();
-                var mapper = MapToDto(assessmentId);
-                foreach (var answerRequest in request.Answers)
-                {
-                    var requestAssessmentId = answerRequest.AssessmentId == Guid.Empty
-                        ? request.AssessmentId
-                        : answerRequest.AssessmentId;
-                    var requestCandidateId = answerRequest.CandidateId == Guid.Empty
-                        ? request.CandidateId
-                        : answerRequest.CandidateId;
+                if (requestCandidateId != request.CandidateId)
+                    return BadRequest(new { message = "All answers must belong to the batch candidate" });
 
-                    if (requestAssessmentId != request.AssessmentId)
-                        return BadRequest(new { message = "All answers must belong to the batch assessment" });
-
-                    if (requestCandidateId != request.CandidateId)
-                        return BadRequest(new { message = "All answers must belong to the batch candidate" });
-
-                    var answer = await _answerService.SubmitAnswerAsync(
-                        requestAssessmentId,
-                        requestCandidateId,
-                        answerRequest.QuestionId,
-                        answerRequest.SelectedOptionId,
-                        answerRequest.AnswerText
-                    );
-                    submittedAnswers.Add(mapper(answer));
-                }
-
-                return Ok(new { submitted = submittedAnswers.Count, answers = submittedAnswers });
+                var answer = await _answerService.SubmitAnswerAsync(
+                    requestAssessmentId,
+                    requestCandidateId,
+                    answerRequest.QuestionId,
+                    answerRequest.SelectedOptionId,
+                    answerRequest.AnswerText
+                );
+                submittedAnswers.Add(mapper(answer));
             }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error submitting batch answers");
-                return StatusCode(500, new { message = "Failed to submit answers" });
-            }
+
+            return Ok(new { submitted = submittedAnswers.Count, answers = submittedAnswers });
         }
 
         /// <summary>
@@ -193,47 +143,35 @@ namespace AnswerService.Api.Controllers
         [Authorize(Roles = "Candidate")]
         public async Task<IActionResult> BulkSaveAnswers([FromBody] BulkSaveAnswersRequest request)
         {
-            try
+            if (request.AssessmentId == Guid.Empty)
+                return BadRequest(new { message = "Assessment ID is required" });
+
+            if (request.CandidateId == Guid.Empty)
+                return BadRequest(new { message = "Candidate ID is required" });
+
+            if (request.Answers == null || !request.Answers.Any())
+                return BadRequest(new { message = "No answers to submit" });
+
+            var submittedAnswers = new List<AnswerDto>();
+            var mapper = MapToDto(request.AssessmentId);
+
+            foreach (var answerRequest in request.Answers)
             {
-                if (request.AssessmentId == Guid.Empty)
-                    return BadRequest(new { message = "Assessment ID is required" });
+                var answerText = answerRequest.DescriptiveAnswer
+                    ?? answerRequest.CodingAnswer
+                    ?? string.Empty;
 
-                if (request.CandidateId == Guid.Empty)
-                    return BadRequest(new { message = "Candidate ID is required" });
+                var answer = await _answerService.SubmitAnswerAsync(
+                    request.AssessmentId,
+                    request.CandidateId,
+                    answerRequest.QuestionId,
+                    answerRequest.SelectedOptionId,
+                    answerText);
 
-                if (request.Answers == null || !request.Answers.Any())
-                    return BadRequest(new { message = "No answers to submit" });
-
-                var submittedAnswers = new List<AnswerDto>();
-                var mapper = MapToDto(request.AssessmentId);
-
-                foreach (var answerRequest in request.Answers)
-                {
-                    var answerText = answerRequest.DescriptiveAnswer
-                        ?? answerRequest.CodingAnswer
-                        ?? string.Empty;
-
-                    var answer = await _answerService.SubmitAnswerAsync(
-                        request.AssessmentId,
-                        request.CandidateId,
-                        answerRequest.QuestionId,
-                        answerRequest.SelectedOptionId,
-                        answerText);
-
-                    submittedAnswers.Add(mapper(answer));
-                }
-
-                return Ok(new { submitted = submittedAnswers.Count, answers = submittedAnswers });
+                submittedAnswers.Add(mapper(answer));
             }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error bulk-saving answers");
-                return StatusCode(500, new { message = "Failed to save answers" });
-            }
+
+            return Ok(new { submitted = submittedAnswers.Count, answers = submittedAnswers });
         }
 
         /// <summary>
@@ -243,27 +181,19 @@ namespace AnswerService.Api.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GradeAnswer(Guid assessmentId, Guid answerId, [FromBody] GradeAnswerRequest request)
         {
-            try
-            {
-                if (answerId != request.AnswerId)
-                    return BadRequest(new { message = "Answer ID mismatch" });
+            if (answerId != request.AnswerId)
+                return BadRequest(new { message = "Answer ID mismatch" });
 
-                var answer = await _answerService.GetByIdAsync(answerId);
-                if (answer == null)
-                    return NotFound(new { message = "Answer not found" });
+            var answer = await _answerService.GetByIdAsync(answerId);
+            if (answer == null)
+                return NotFound(new { message = "Answer not found" });
 
-                if (answer.AssessmentId != assessmentId)
-                    return BadRequest(new { message = "Answer does not belong to this assessment" });
+            if (answer.AssessmentId != assessmentId)
+                return BadRequest(new { message = "Answer does not belong to this assessment" });
 
-                var gradedAnswer = await _answerService.GradeAnswerAsync(answerId, request.IsCorrect, request.PointsObtained, request.Notes);
-                var mapper = MapToDto(assessmentId);
-                return Ok(mapper(gradedAnswer));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error grading answer {AnswerId}", answerId);
-                return StatusCode(500, new { message = "Failed to grade answer" });
-            }
+            var gradedAnswer = await _answerService.GradeAnswerAsync(answerId, request.IsCorrect, request.PointsObtained, request.Notes);
+            var mapper = MapToDto(assessmentId);
+            return Ok(mapper(gradedAnswer));
         }
 
         // Helper method to map Answer entity to DTO

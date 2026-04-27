@@ -1,4 +1,5 @@
 using AssessmentService.Application.Services;
+using AssessmentService.Api.Middleware;
 using AssessmentService.Infrastructure.Services;
 using AssessmentService.Infrastructure.Persistence;
 using AssessmentService.Api.Hubs;
@@ -77,6 +78,7 @@ if (!app.Environment.IsProduction())
     app.UseHttpsRedirection();
 }
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,4 +1,5 @@
 using IdentityService.Api.Controllers;
+using IdentityService.Api.Middleware;
 using IdentityService.Infrastructure;
 using IdentityService.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +45,7 @@ if (!app.Environment.IsProduction())
     app.UseHttpsRedirection();
 }
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseCors("AllowFrontend");
 app.UseSwagger();
 app.UseSwaggerUI();

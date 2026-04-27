@@ -1,3 +1,4 @@
+using CandidateService.Api.Middleware;
 using CandidateService.Application.Services;
 using CandidateService.Infrastructure.Services;
 using CandidateService.Infrastructure.Persistence;
@@ -95,6 +96,7 @@ if (!app.Environment.IsProduction())
     app.UseHttpsRedirection();
 }
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();

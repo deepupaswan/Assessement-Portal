@@ -1,3 +1,4 @@
+using AnswerService.Api.Middleware;
 using AnswerService.Application.Services;
 using AnswerService.Infrastructure;
 using AnswerService.Infrastructure.Persistence;
@@ -93,6 +94,7 @@ if (!app.Environment.IsProduction())
     app.UseHttpsRedirection();
 }
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
@@ -105,8 +107,3 @@ app.MapGet("/", () => Results.Redirect("/swagger"));
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy", service = "answer-service" }));
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

@@ -92,22 +92,14 @@ public class QuestionsController : ControllerBase
         if (normalizedType == "MCQ" && !request.Options.Any(o => o.IsCorrect))
             return BadRequest("At least one option must be marked correct");
 
-        Question question;
-        try
-        {
-            question = await _questionService.CreateQuestionAsync(
-                assessmentId,
-                request.Text,
-                normalizedType,
-                request.MaxScore,
-                request.CorrectAnswer,
-                request.IsRequired,
-                request.Order);
-        }
-        catch (ArgumentException)
-        {
-            return NotFound("Assessment not found");
-        }
+        var question = await _questionService.CreateQuestionAsync(
+            assessmentId,
+            request.Text,
+            normalizedType,
+            request.MaxScore,
+            request.CorrectAnswer,
+            request.IsRequired,
+            request.Order);
 
         // Add options
         foreach (var option in request.Options.OrderBy(o => o.Order))

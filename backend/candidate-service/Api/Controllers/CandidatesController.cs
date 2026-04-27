@@ -1,5 +1,6 @@
 using CandidateService.Application.Events;
 using CandidateService.Application.Services;
+using CandidateService.Api.Models;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -123,26 +124,18 @@ public class CandidatesController : ControllerBase
     [Authorize(Roles = "Candidate")]
     public async Task<IActionResult> GetMyAssignments()
     {
-        try
-        {
-            var currentCandidate = await GetCurrentCandidateAsync();
+        var currentCandidate = await GetCurrentCandidateAsync();
 
-            if (currentCandidate == null)
-                return Ok(Array.Empty<CandidateAssignmentDto>());
+        if (currentCandidate == null)
+            return Ok(Array.Empty<CandidateAssignmentDto>());
 
-            var assignments = new List<CandidateAssignmentDto>();
-            var candidateAssignments = await _assessmentService.GetCandidateAssessmentsAsync(currentCandidate.Id);
+        var assignments = new List<CandidateAssignmentDto>();
+        var candidateAssignments = await _assessmentService.GetCandidateAssessmentsAsync(currentCandidate.Id);
 
-            foreach (var assignment in candidateAssignments)
-                assignments.Add(await MapAssignmentAsync(assignment));
+        foreach (var assignment in candidateAssignments)
+            assignments.Add(await MapAssignmentAsync(assignment));
 
-            return Ok(assignments);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unable to load assignments for current candidate.");
-            return StatusCode(500, new { message = "Unable to load assignments" });
-        }
+        return Ok(assignments);
     }
 
     [HttpGet("assessments/{candidateAssessmentId}/session")]
@@ -231,33 +224,25 @@ public class CandidatesController : ControllerBase
         if (!success)
             return NotFound(new { message = "Assignment not found" });
 
-        try
+        using var request = CreateAuthorizedRequest(
+            HttpMethod.Post,
+            $"{_resultServiceBaseUrl}/api/results/assessments/{assignment.AssessmentId}/candidates/{assignment.CandidateId}/calculate");
+        using var response = await _httpClient.SendAsync(request);
+
+        if (!response.IsSuccessStatusCode)
         {
-            using var request = CreateAuthorizedRequest(
-                HttpMethod.Post,
-                $"{_resultServiceBaseUrl}/api/results/assessments/{assignment.AssessmentId}/candidates/{assignment.CandidateId}/calculate");
-            using var response = await _httpClient.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
+            _logger.LogError(
+                "Result calculation failed for assignment {CandidateAssessmentId}. Status {StatusCode}: {Body}",
+                candidateAssessmentId,
+                response.StatusCode,
+                body);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                var body = await response.Content.ReadAsStringAsync();
-                _logger.LogError(
-                    "Result calculation failed for assignment {CandidateAssessmentId}. Status {StatusCode}: {Body}",
-                    candidateAssessmentId,
-                    response.StatusCode,
-                    body);
-
-                return StatusCode(502, new { message = "Assessment submitted, but score calculation failed" });
-            }
-
-            var result = await response.Content.ReadFromJsonAsync<object>();
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unable to calculate score for assignment {CandidateAssessmentId}", candidateAssessmentId);
             return StatusCode(502, new { message = "Assessment submitted, but score calculation failed" });
         }
+
+        var result = await response.Content.ReadFromJsonAsync<object>();
+        return Ok(result);
     }
 
     [HttpGet("live-progress")]
@@ -333,56 +318,40 @@ public class CandidatesController : ControllerBase
 
     private async Task<AssessmentDto?> GetAssessmentAsync(Guid assessmentId)
     {
-        try
-        {
-            using var request = CreateAuthorizedRequest(
-                HttpMethod.Get,
-                $"{_assessmentServiceBaseUrl}/api/assessments/{assessmentId}");
-            using var response = await _httpClient.SendAsync(request);
+        using var request = CreateAuthorizedRequest(
+            HttpMethod.Get,
+            $"{_assessmentServiceBaseUrl}/api/assessments/{assessmentId}");
+        using var response = await _httpClient.SendAsync(request);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning(
-                    "Assessment service returned {StatusCode} for assessment {AssessmentId}",
-                    response.StatusCode,
-                    assessmentId);
-                return null;
-            }
-
-            return await response.Content.ReadFromJsonAsync<AssessmentDto>();
-        }
-        catch (Exception ex)
+        if (!response.IsSuccessStatusCode)
         {
-            _logger.LogError(ex, "Unable to load assessment {AssessmentId}", assessmentId);
+            _logger.LogWarning(
+                "Assessment service returned {StatusCode} for assessment {AssessmentId}",
+                response.StatusCode,
+                assessmentId);
             return null;
         }
+
+        return await response.Content.ReadFromJsonAsync<AssessmentDto>();
     }
 
     private async Task<List<QuestionDto>> GetQuestionsAsync(Guid assessmentId)
     {
-        try
-        {
-            using var request = CreateAuthorizedRequest(
-                HttpMethod.Get,
-                $"{_assessmentServiceBaseUrl}/api/assessments/{assessmentId}/questions");
-            using var response = await _httpClient.SendAsync(request);
+        using var request = CreateAuthorizedRequest(
+            HttpMethod.Get,
+            $"{_assessmentServiceBaseUrl}/api/assessments/{assessmentId}/questions");
+        using var response = await _httpClient.SendAsync(request);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning(
-                    "Assessment service returned {StatusCode} for questions of assessment {AssessmentId}",
-                    response.StatusCode,
-                    assessmentId);
-                return new List<QuestionDto>();
-            }
-
-            return await response.Content.ReadFromJsonAsync<List<QuestionDto>>() ?? new List<QuestionDto>();
-        }
-        catch (Exception ex)
+        if (!response.IsSuccessStatusCode)
         {
-            _logger.LogError(ex, "Unable to load questions for assessment {AssessmentId}", assessmentId);
+            _logger.LogWarning(
+                "Assessment service returned {StatusCode} for questions of assessment {AssessmentId}",
+                response.StatusCode,
+                assessmentId);
             return new List<QuestionDto>();
         }
+
+        return await response.Content.ReadFromJsonAsync<List<QuestionDto>>() ?? new List<QuestionDto>();
     }
 
     private static int GetRemainingSeconds(CandidateService.Domain.Entities.CandidateAssessment assignment, int durationMinutes)
@@ -427,102 +396,4 @@ public class CandidatesController : ControllerBase
 
         return request;
     }
-}
-
-public class CreateCandidateRequest
-{
-    public string Name { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-}
-
-public class AssignAssessmentRequest
-{
-    public Guid AssessmentId { get; set; }
-}
-
-public class AssignmentRequest
-{
-    public Guid CandidateId { get; set; }
-    public Guid AssessmentId { get; set; }
-    public DateTime? ScheduledAtUtc { get; set; }
-}
-
-public class CandidateAssignmentDto
-{
-    public Guid CandidateAssessmentId { get; set; }
-    public Guid CandidateId { get; set; }
-    public Guid AssessmentId { get; set; }
-    public string AssessmentTitle { get; set; } = string.Empty;
-    public string Status { get; set; } = "Assigned";
-    public DateTime? StartTimeUtc { get; set; }
-    public DateTime? SubmittedAtUtc { get; set; }
-    public int RemainingSeconds { get; set; }
-}
-
-public class CandidateAssessmentSessionDto
-{
-    public Guid CandidateAssessmentId { get; set; }
-    public Guid CandidateId { get; set; }
-    public Guid AssessmentId { get; set; }
-    public string AssessmentTitle { get; set; } = string.Empty;
-    public int DurationMinutes { get; set; }
-    public int RemainingSeconds { get; set; }
-    public int AllowedViolations { get; set; }
-    public List<CandidateQuestionDto> Questions { get; set; } = new();
-}
-
-public class CandidateQuestionDto
-{
-    public Guid Id { get; set; }
-    public string Prompt { get; set; } = string.Empty;
-    public string QuestionType { get; set; } = "MCQ";
-    public int Marks { get; set; }
-    public List<CandidateQuestionOptionDto> Options { get; set; } = new();
-}
-
-public class CandidateQuestionOptionDto
-{
-    public Guid Id { get; set; }
-    public string Text { get; set; } = string.Empty;
-}
-
-public class AssessmentProgressDto
-{
-    public Guid CandidateAssessmentId { get; set; }
-    public string CandidateName { get; set; } = string.Empty;
-    public string Status { get; set; } = "Assigned";
-    public int CompletionPercent { get; set; }
-    public int SuspiciousEvents { get; set; }
-    public int RemainingSeconds { get; set; }
-}
-
-public class SuspiciousActivityRequest
-{
-    public Guid CandidateAssessmentId { get; set; }
-    public string ViolationType { get; set; } = string.Empty;
-    public string? Metadata { get; set; }
-}
-
-public class AssessmentDto
-{
-    public Guid Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public int DurationMinutes { get; set; } = 60;
-}
-
-public class QuestionDto
-{
-    public Guid Id { get; set; }
-    public string Text { get; set; } = string.Empty;
-    public string Type { get; set; } = "MCQ";
-    public int MaxScore { get; set; } = 1;
-    public int Order { get; set; }
-    public List<QuestionOptionDto> Options { get; set; } = new();
-}
-
-public class QuestionOptionDto
-{
-    public Guid Id { get; set; }
-    public string Text { get; set; } = string.Empty;
-    public int Order { get; set; }
 }

@@ -1,3 +1,5 @@
+using ApiGateway.Api.Middleware;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
@@ -26,6 +28,7 @@ if (!app.Environment.IsProduction())
     app.UseHttpsRedirection();
 }
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseCors("AllowFrontend");
 
 app.MapGet("/", () => Results.Ok(new

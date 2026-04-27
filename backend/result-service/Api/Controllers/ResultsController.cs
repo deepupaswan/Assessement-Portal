@@ -12,12 +12,10 @@ namespace ResultService.Api.Controllers
     public class ResultsController : ControllerBase
     {
         private readonly IResultService _resultService;
-        private readonly ILogger<ResultsController> _logger;
 
-        public ResultsController(IResultService resultService, ILogger<ResultsController> logger)
+        public ResultsController(IResultService resultService)
         {
             _resultService = resultService;
-            _logger = logger;
         }
 
         /// <summary>
@@ -27,40 +25,24 @@ namespace ResultService.Api.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll()
         {
-            try
-            {
-                var results = await _resultService.GetAllAsync();
-                var mapper = MapToDto();
-                return Ok(results.Select(mapper).ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting all results");
-                return StatusCode(500, new { message = "Failed to get results" });
-            }
+            var results = await _resultService.GetAllAsync();
+            var mapper = MapToDto();
+            return Ok(results.Select(mapper).ToList());
         }
 
         [HttpGet("analytics/overview")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAnalyticsOverview()
         {
-            try
+            var results = await _resultService.GetAllAsync();
+            var total = results.Count;
+            return Ok(new
             {
-                var results = await _resultService.GetAllAsync();
-                var total = results.Count;
-                return Ok(new
-                {
-                    totalCandidates = results.Select(r => r.CandidateId).Distinct().Count(),
-                    averageScore = total > 0 ? Math.Round(results.Average(r => r.Percentage), 2) : 0,
-                    suspiciousCases = 0,
-                    completionRate = total > 0 ? 100 : 0
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting analytics overview");
-                return StatusCode(500, new { message = "Failed to get analytics overview" });
-            }
+                totalCandidates = results.Select(r => r.CandidateId).Distinct().Count(),
+                averageScore = total > 0 ? Math.Round(results.Average(r => r.Percentage), 2) : 0,
+                suspiciousCases = 0,
+                completionRate = total > 0 ? 100 : 0
+            });
         }
 
         /// <summary>
@@ -70,20 +52,12 @@ namespace ResultService.Api.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetById(Guid resultId)
         {
-            try
-            {
-                var result = await _resultService.GetByIdAsync(resultId);
-                if (result == null)
-                    return NotFound(new { message = "Result not found" });
+            var result = await _resultService.GetByIdAsync(resultId);
+            if (result == null)
+                return NotFound(new { message = "Result not found" });
 
-                var mapper = MapToDto();
-                return Ok(mapper(result));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting result {ResultId}", resultId);
-                return StatusCode(500, new { message = "Failed to get result" });
-            }
+            var mapper = MapToDto();
+            return Ok(mapper(result));
         }
 
         /// <summary>
@@ -93,36 +67,28 @@ namespace ResultService.Api.Controllers
         [Authorize(Roles = "Admin,Candidate")]
         public async Task<IActionResult> GetCandidateResults(Guid candidateId)
         {
-            try
+            var results = await _resultService.GetByCandidateIdAsync(candidateId);
+            var performance = new CandidatePerformanceDto
             {
-                var results = await _resultService.GetByCandidateIdAsync(candidateId);
-                var performance = new CandidatePerformanceDto
+                CandidateId = candidateId,
+                Results = results.Select(r => new ResultSummaryDto
                 {
-                    CandidateId = candidateId,
-                    Results = results.Select(r => new ResultSummaryDto
-                    {
-                        ResultId = r.Id,
-                        CandidateId = r.CandidateId,
-                        AssessmentId = r.AssessmentId,
-                        Score = r.Score,
-                        MaxScore = r.MaxScore,
-                        Percentage = r.Percentage,
-                        IsPassed = r.IsPassed,
-                        Remarks = r.Remarks ?? string.Empty,
-                        PublishedAt = r.PublishedAt
-                    }).ToList(),
-                    AveragePercentage = results.Any() ? Math.Round(results.Average(r => r.Percentage), 2) : 0,
-                    TotalAssessmentsTaken = results.Count,
-                    TotalPassed = results.Count(r => r.IsPassed),
-                    TotalFailed = results.Count(r => !r.IsPassed)
-                };
-                return Ok(performance);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting results for candidate {CandidateId}", candidateId);
-                return StatusCode(500, new { message = "Failed to get candidate results" });
-            }
+                    ResultId = r.Id,
+                    CandidateId = r.CandidateId,
+                    AssessmentId = r.AssessmentId,
+                    Score = r.Score,
+                    MaxScore = r.MaxScore,
+                    Percentage = r.Percentage,
+                    IsPassed = r.IsPassed,
+                    Remarks = r.Remarks ?? string.Empty,
+                    PublishedAt = r.PublishedAt
+                }).ToList(),
+                AveragePercentage = results.Any() ? Math.Round(results.Average(r => r.Percentage), 2) : 0,
+                TotalAssessmentsTaken = results.Count,
+                TotalPassed = results.Count(r => r.IsPassed),
+                TotalFailed = results.Count(r => !r.IsPassed)
+            };
+            return Ok(performance);
         }
 
         /// <summary>
@@ -132,27 +98,19 @@ namespace ResultService.Api.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAssessmentResults(Guid assessmentId)
         {
-            try
+            var results = await _resultService.GetByAssessmentIdAsync(assessmentId);
+            var analytics = new AssessmentAnalyticsDto
             {
-                var results = await _resultService.GetByAssessmentIdAsync(assessmentId);
-                var analytics = new AssessmentAnalyticsDto
-                {
-                    AssessmentId = assessmentId,
-                    TotalCandidates = results.Count,
-                    PassedCount = results.Count(r => r.IsPassed),
-                    FailedCount = results.Count(r => !r.IsPassed),
-                    AverageScore = results.Any() ? Math.Round((decimal)results.Average(r => r.Score), 2) : 0,
-                    AveragePercentage = results.Any() ? Math.Round(results.Average(r => r.Percentage), 2) : 0,
-                    HighestScore = results.Any() ? results.Max(r => r.Score) : 0,
-                    LowestScore = results.Any() ? results.Min(r => r.Score) : 0
-                };
-                return Ok(analytics);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting results for assessment {AssessmentId}", assessmentId);
-                return StatusCode(500, new { message = "Failed to get assessment results" });
-            }
+                AssessmentId = assessmentId,
+                TotalCandidates = results.Count,
+                PassedCount = results.Count(r => r.IsPassed),
+                FailedCount = results.Count(r => !r.IsPassed),
+                AverageScore = results.Any() ? Math.Round((decimal)results.Average(r => r.Score), 2) : 0,
+                AveragePercentage = results.Any() ? Math.Round(results.Average(r => r.Percentage), 2) : 0,
+                HighestScore = results.Any() ? results.Max(r => r.Score) : 0,
+                LowestScore = results.Any() ? results.Min(r => r.Score) : 0
+            };
+            return Ok(analytics);
         }
 
         /// <summary>
@@ -162,21 +120,12 @@ namespace ResultService.Api.Controllers
         [Authorize(Roles = "Admin,Candidate")]
         public async Task<IActionResult> GetCandidateAssessmentResult(Guid assessmentId, Guid candidateId)
         {
-            try
-            {
-                var result = await _resultService.GetByCandidateAndAssessmentAsync(candidateId, assessmentId);
-                if (result == null)
-                    return NotFound(new { message = "Result not found" });
+            var result = await _resultService.GetByCandidateAndAssessmentAsync(candidateId, assessmentId);
+            if (result == null)
+                return NotFound(new { message = "Result not found" });
 
-                var mapper = MapToDto();
-                return Ok(mapper(result));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting result for candidate {CandidateId} in assessment {AssessmentId}",
-                    candidateId, assessmentId);
-                return StatusCode(500, new { message = "Failed to get result" });
-            }
+            var mapper = MapToDto();
+            return Ok(mapper(result));
         }
 
         /// <summary>
@@ -186,18 +135,9 @@ namespace ResultService.Api.Controllers
         [Authorize(Roles = "Admin,Candidate")]
         public async Task<IActionResult> CalculateAndPublishResult(Guid assessmentId, Guid candidateId)
         {
-            try
-            {
-                var result = await _resultService.CalculateAndPublishAsync(candidateId, assessmentId);
-                var mapper = MapToDto();
-                return Ok(mapper(result));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating result for candidate {CandidateId} in assessment {AssessmentId}",
-                    candidateId, assessmentId);
-                return StatusCode(500, new { message = "Failed to calculate result: " + ex.Message });
-            }
+            var result = await _resultService.CalculateAndPublishAsync(candidateId, assessmentId);
+            var mapper = MapToDto();
+            return Ok(mapper(result));
         }
 
         /// <summary>
@@ -207,17 +147,9 @@ namespace ResultService.Api.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PublishResult(Guid resultId)
         {
-            try
-            {
-                var result = await _resultService.PublishResultAsync(resultId);
-                var mapper = MapToDto();
-                return Ok(mapper(result));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error publishing result {ResultId}", resultId);
-                return StatusCode(500, new { message = "Failed to publish result" });
-            }
+            var result = await _resultService.PublishResultAsync(resultId);
+            var mapper = MapToDto();
+            return Ok(mapper(result));
         }
 
         /// <summary>
@@ -227,17 +159,9 @@ namespace ResultService.Api.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetPassedCandidates(Guid assessmentId)
         {
-            try
-            {
-                var results = await _resultService.GetPassedCandidatesAsync(assessmentId);
-                var mapper = MapToDto();
-                return Ok(results.Select(mapper).ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting passed candidates for assessment {AssessmentId}", assessmentId);
-                return StatusCode(500, new { message = "Failed to get passed candidates" });
-            }
+            var results = await _resultService.GetPassedCandidatesAsync(assessmentId);
+            var mapper = MapToDto();
+            return Ok(results.Select(mapper).ToList());
         }
 
         /// <summary>
@@ -247,17 +171,9 @@ namespace ResultService.Api.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetFailedCandidates(Guid assessmentId)
         {
-            try
-            {
-                var results = await _resultService.GetFailedCandidatesAsync(assessmentId);
-                var mapper = MapToDto();
-                return Ok(results.Select(mapper).ToList());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting failed candidates for assessment {AssessmentId}", assessmentId);
-                return StatusCode(500, new { message = "Failed to get failed candidates" });
-            }
+            var results = await _resultService.GetFailedCandidatesAsync(assessmentId);
+            var mapper = MapToDto();
+            return Ok(results.Select(mapper).ToList());
         }
 
         // Helper method to map Result entity to DTO

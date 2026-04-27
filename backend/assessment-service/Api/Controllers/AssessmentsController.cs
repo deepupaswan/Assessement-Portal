@@ -1,4 +1,5 @@
 using AssessmentService.Application.Services;
+using AssessmentService.Api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -92,20 +93,4 @@ public class AssessmentsController : ControllerBase
             CreatedAt = assessment.CreatedAt
         };
     }
-}
-
-public class CreateAssessmentRequest
-{
-    public string Title { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public int DurationMinutes { get; set; } = 60;
-    public bool RandomizeQuestions { get; set; }
-}
-
-public class UpdateAssessmentRequest
-{
-    public string Title { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public int DurationMinutes { get; set; } = 60;
-    public bool RandomizeQuestions { get; set; }
 }
