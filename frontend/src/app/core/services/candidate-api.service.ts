@@ -27,6 +27,14 @@ export class CandidateApiService {
     return this.http.post<Candidate>('/api/candidates', payload);
   }
 
+  updateCandidate(id: string, payload: Pick<Candidate, 'name' | 'email'>): Observable<Candidate> {
+    return this.http.put<Candidate>(`/api/candidates/${id}`, payload);
+  }
+
+  deleteCandidate(id: string): Observable<void> {
+    return this.http.delete<void>(`/api/candidates/${id}`);
+  }
+
   getMyAssignments(): Observable<CandidateAssignment[]> {
     return this.http.get<CandidateAssignment[]>('/api/candidates/assignments/me');
   }

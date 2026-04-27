@@ -1,16 +1,251 @@
 <div class="page-container">
+  <!-- Page Header -->
   <div class="page-header">
     <div class="header-content">
       <h1>Candidates</h1>
-      <p class="page-subtitle">Manage and add candidates</p>
+      <p class="page-subtitle">Manage candidates and bulk upload</p>
     </div>
-    <button class="btn btn-primary">
-      <i class="icon icon-plus"></i>
-      Add Candidate
-    </button>
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="openBulkUpload()" *ngIf="!showBulkUpload">
+        <i class="icon icon-upload"></i>
+        Bulk Upload
+      </button>
+      <button class="btn btn-primary" (click)="openCreateForm()" *ngIf="!showForm">
+        <i class="icon icon-plus"></i>
+        Add Candidate
+      </button>
+    </div>
   </div>
 
+  <!-- Error Alert -->
+  <div class="alert alert-error" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <!-- Page Content -->
   <div class="page-content">
-    <p>Candidates management page coming soon...</p>
+    <!-- Bulk Upload Form -->
+    <div class="bulk-upload-section" *ngIf="showBulkUpload">
+      <div class="card">
+        <div class="card-header">
+          <h3>Bulk Upload Candidates</h3>
+          <button class="btn-close" (click)="closeBulkUpload()">✕</button>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">Upload a CSV file with columns: name, email</p>
+          
+          <div class="form-group">
+            <label>Select CSV File</label>
+            <input type="file" accept=".csv" (change)="onFileSelected($event)" [disabled]="bulkUploading">
+          </div>
+
+          <button class="btn btn-primary" (click)="uploadBulkCandidates()" [disabled]="!bulkUploadFile || bulkUploading">
+            <i class="icon icon-upload"></i>
+            {{ bulkUploading ? 'Uploading...' : 'Upload' }}
+          </button>
+
+          <!-- Upload Result -->
+          <div *ngIf="bulkUploadResult" class="upload-result">
+            <div class="result-summary">
+              <div class="stat">
+                <span class="stat-label">Total</span>
+                <span class="stat-value">{{ bulkUploadResult.total }}</span>
+              </div>
+              <div class="stat success">
+                <span class="stat-label">Success</span>
+                <span class="stat-value">{{ bulkUploadResult.success }}</span>
+              </div>
+              <div class="stat" *ngIf="bulkUploadResult.failed > 0">
+                <span class="stat-label">Failed</span>
+                <span class="stat-value">{{ bulkUploadResult.failed }}</span>
+              </div>
+            </div>
+
+            <div *ngIf="bulkUploadResult.errors.length > 0" class="errors-list">
+              <p class="text-muted">Errors:</p>
+              <div class="error-item" *ngFor="let err of bulkUploadResult.errors">
+                {{ err }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create/Edit Form -->
+    <div class="form-section" *ngIf="showForm">
+      <div class="card">
+        <div class="card-header">
+          <h3>{{ editingCandidate ? 'Edit Candidate' : 'Create New Candidate' }}</h3>
+          <button class="btn-close" (click)="cancelForm()">✕</button>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="name">Name *</label>
+            <input 
+              id="name"
+              type="text" 
+              [(ngModel)]="formData.name" 
+              placeholder="Full name"
+              class="form-control"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input 
+              id="email"
+              type="email" 
+              [(ngModel)]="formData.email" 
+              placeholder="candidate&#64;example.com"
+              class="form-control"
+            >
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" (click)="saveCandidate()">
+              {{ editingCandidate ? 'Update' : 'Create' }}
+            </button>
+            <button class="btn btn-secondary" (click)="cancelForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assign Assessment Form -->
+    <div class="form-section" *ngIf="showAssignForm">
+      <div class="card">
+        <div class="card-header">
+          <h3>Assign Assessment to {{ assigningCandidate?.name }}</h3>
+          <button class="btn-close" (click)="closeAssignForm()">✕</button>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="assessment">Assessment *</label>
+            <select 
+              id="assessment"
+              [(ngModel)]="selectedAssessment" 
+              class="form-control"
+            >
+              <option value="">Select an assessment</option>
+              <option *ngFor="let assessment of assessments" [value]="assessment.id">
+                {{ assessment.title }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" (click)="assignAssessment()" [disabled]="!selectedAssessment">
+              Assign
+            </button>
+            <button class="btn btn-secondary" (click)="closeAssignForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Candidates Table -->
+    <div class="table-section" *ngIf="!showForm && !showBulkUpload && !showAssignForm">
+      <!-- Search & Filter -->
+      <div class="controls-bar">
+        <div class="search-box">
+          <i class="icon icon-search"></i>
+          <input 
+            type="text" 
+            [(ngModel)]="searchTerm" 
+            placeholder="Search by name or email..."
+            class="search-input"
+          >
+        </div>
+
+        <div class="filter-tabs">
+          <button 
+            class="filter-tab" 
+            [class.active]="filterStatus === 'all'"
+            (click)="filterStatus = 'all'"
+          >
+            All
+          </button>
+          <button 
+            class="filter-tab" 
+            [class.active]="filterStatus === 'active'"
+            (click)="filterStatus = 'active'"
+          >
+            Active
+          </button>
+          <button 
+            class="filter-tab" 
+            [class.active]="filterStatus === 'assigned'"
+            (click)="filterStatus = 'assigned'"
+          >
+            Assigned
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-spinner" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Loading candidates...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="!loading && filteredCandidates.length === 0">
+        <p>No candidates found</p>
+        <button class="btn btn-primary" (click)="openCreateForm()">
+          <i class="icon icon-plus"></i>
+          Add First Candidate
+        </button>
+      </div>
+
+      <!-- Table -->
+      <table class="data-table" *ngIf="!loading && filteredCandidates.length > 0">
+        <thead>
+          <tr>
+            <th class="sortable" (click)="changeSortBy('name')">
+              Name
+              <span class="sort-indicator" *ngIf="sortBy === 'name'">
+                {{ sortDesc ? '▼' : '▲' }}
+              </span>
+            </th>
+            <th class="sortable" (click)="changeSortBy('email')">
+              Email
+              <span class="sort-indicator" *ngIf="sortBy === 'email'">
+                {{ sortDesc ? '▼' : '▲' }}
+              </span>
+            </th>
+            <th>Status</th>
+            <th class="sortable" (click)="changeSortBy('date')">
+              Registered
+              <span class="sort-indicator" *ngIf="sortBy === 'date'">
+                {{ sortDesc ? '▼' : '▲' }}
+              </span>
+            </th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let candidate of filteredCandidates">
+            <td class="font-bold">{{ candidate.name }}</td>
+            <td>{{ candidate.email }}</td>
+            <td>
+              <span class="badge badge-success">{{ candidate.status }}</span>
+            </td>
+            <td class="text-muted">{{ candidate.createdAt | date: 'MMM d, y' }}</td>
+            <td class="text-right">
+              <button class="btn-icon" title="Assign Assessment" (click)="openAssignForm(candidate)">
+                ➕
+              </button>
+              <button class="btn-icon" title="Edit" (click)="editCandidate(candidate)">
+                ✎
+              </button>
+              <button class="btn-icon btn-danger" title="Delete" (click)="deleteCandidate(candidate)">
+                🗑
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
