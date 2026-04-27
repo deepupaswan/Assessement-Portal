@@ -52,16 +52,20 @@ jobs:
           ALL_SERVICE_NAMES='identity-service, answer-service, assessment-service, candidate-service, result-service, api-gateway, frontend'
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "matrix=$(echo "$ALL_SERVICES" | jq -c .)" >> "$GITHUB_OUTPUT"
-            echo "has_services=true" >> "$GITHUB_OUTPUT"
-            echo "service_names=$ALL_SERVICE_NAMES" >> "$GITHUB_OUTPUT"
+            {
+              echo "matrix=$(echo "$ALL_SERVICES" | jq -c .)"
+              echo "has_services=true"
+              echo "service_names=$ALL_SERVICE_NAMES"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            echo "matrix=$(echo "$ALL_SERVICES" | jq -c .)" >> "$GITHUB_OUTPUT"
-            echo "has_services=true" >> "$GITHUB_OUTPUT"
-            echo "service_names=$ALL_SERVICE_NAMES" >> "$GITHUB_OUTPUT"
+            {
+              echo "matrix=$(echo "$ALL_SERVICES" | jq -c .)"
+              echo "has_services=true"
+              echo "service_names=$ALL_SERVICE_NAMES"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -104,16 +108,20 @@ jobs:
           done <<< "$CHANGED_FILES"
 
           if [ "$build_all" = "true" ]; then
-            echo "matrix=$(echo "$ALL_SERVICES" | jq -c .)" >> "$GITHUB_OUTPUT"
-            echo "has_services=true" >> "$GITHUB_OUTPUT"
-            echo "service_names=$ALL_SERVICE_NAMES" >> "$GITHUB_OUTPUT"
+            {
+              echo "matrix=$(echo "$ALL_SERVICES" | jq -c .)"
+              echo "has_services=true"
+              echo "service_names=$ALL_SERVICE_NAMES"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if [ "${#selected[@]}" -eq 0 ]; then
-            echo "matrix=$(echo "$NOOP" | jq -c .)" >> "$GITHUB_OUTPUT"
-            echo "has_services=false" >> "$GITHUB_OUTPUT"
-            echo "service_names=none" >> "$GITHUB_OUTPUT"
+            {
+              echo "matrix=$(echo "$NOOP" | jq -c .)"
+              echo "has_services=false"
+              echo "service_names=none"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -121,14 +129,18 @@ jobs:
           FILTERED="$(jq -c --argjson names "$SELECTED_JSON" '[.[] | select(.name as $n | $names | index($n))]' <<< "$ALL_SERVICES")"
 
           if [ "$FILTERED" = "[]" ]; then
-            echo "matrix=$(echo "$NOOP" | jq -c .)" >> "$GITHUB_OUTPUT"
-            echo "has_services=false" >> "$GITHUB_OUTPUT"
-            echo "service_names=none" >> "$GITHUB_OUTPUT"
+            {
+              echo "matrix=$(echo "$NOOP" | jq -c .)"
+              echo "has_services=false"
+              echo "service_names=none"
+            } >> "$GITHUB_OUTPUT"
           else
             SERVICE_NAMES="$(jq -r 'map(.name) | sort | join(", ")' <<< "$FILTERED")"
-            echo "matrix=$FILTERED" >> "$GITHUB_OUTPUT"
-            echo "has_services=true" >> "$GITHUB_OUTPUT"
-            echo "service_names=$SERVICE_NAMES" >> "$GITHUB_OUTPUT"
+            {
+              echo "matrix=$FILTERED"
+              echo "has_services=true"
+              echo "service_names=$SERVICE_NAMES"
+            } >> "$GITHUB_OUTPUT"
           fi
 
   build-and-push:
@@ -219,27 +231,40 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
 
-            for url in \
-              "http://localhost:7080/health" \
-              "http://localhost:7140/health" \
-              "http://localhost:7141/health" \
-              "http://localhost:7142/health" \
-              "http://localhost:7143/health" \
-              "http://localhost:7144/health"
+            docker compose -f docker-compose.prod.yml ps
+
+            for container in \
+              "api-gateway" \
+              "identity-service" \
+              "answer-service" \
+              "assessment-service" \
+              "candidate-service" \
+              "result-service"
             do
-              echo "Checking $url"
+              echo "Checking container health: $container"
               ok="false"
+
               for i in $(seq 1 30); do
-                if curl -fsS "$url" > /dev/null; then
-                  echo "Healthy: $url"
+                status="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container" 2>/dev/null || true)"
+
+                if [ "$status" = "healthy" ]; then
+                  echo "Healthy: $container"
                   ok="true"
                   break
                 fi
+
+                if [ "$status" = "exited" ] || [ "$status" = "dead" ]; then
+                  echo "Container failed: $container (status=$status)"
+                  docker logs --tail 100 "$container" || true
+                  exit 1
+                fi
+
                 sleep 5
               done
 
               if [ "$ok" != "true" ]; then
-                echo "Health check failed for $url"
+                echo "Health check failed for container: $container"
+                docker logs --tail 100 "$container" || true
                 exit 1
               fi
             done
