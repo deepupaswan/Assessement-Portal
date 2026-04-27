@@ -30,26 +30,26 @@ namespace AssessmentService.Api.Hubs
             await Clients.Group(assessmentId).SendAsync("CandidateJoined", candidateName);
         }
 
-        public async Task JoinAssessmentChannel(string candidateAssessmentId)
+        public async Task JoinAssessmentChannel(string candidateAssessmentId, string candidateName)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, candidateAssessmentId);
             await Clients.Group(AdminMonitoringChannel).SendAsync("CandidateJoined",
-                new { candidateAssessmentId, connectedAt = DateTime.UtcNow });
+                new { candidateAssessmentId, candidateName, connectedAt = DateTime.UtcNow });
         }
 
-        public async Task UpdateProgress(string assessmentId, int progress)
+        public async Task UpdateProgress(string candidateAssessmentId, int progress, string candidateName)
         {
             var payload = new
             {
-                candidateAssessmentId = assessmentId,
-                candidateName = "Candidate",
+                candidateAssessmentId,
+                candidateName,
                 status = progress >= 100 ? "Submitted" : "InProgress",
                 completionPercent = progress,
                 suspiciousEvents = 0,
                 remainingSeconds = 0
             };
 
-            await Clients.Group(assessmentId).SendAsync("ProgressUpdated", payload);
+            await Clients.Group(candidateAssessmentId).SendAsync("ProgressUpdated", payload);
             await Clients.Group(AdminMonitoringChannel).SendAsync("ProgressUpdated", payload);
         }
 
@@ -62,13 +62,13 @@ namespace AssessmentService.Api.Hubs
                 new { assessmentId, candidateName, score, completedAt = DateTime.UtcNow });
         }
 
-        public async Task ReportSuspiciousActivity(string assessmentId, string candidateName, string violationType)
+        public async Task ReportSuspiciousActivity(string candidateAssessmentId, string candidateName, string violationType)
         {
-            await Clients.Group(assessmentId).SendAsync("SuspiciousActivityDetected",
-                new { candidateName, violationType, reportedAt = DateTime.UtcNow });
+            await Clients.Group(candidateAssessmentId).SendAsync("SuspiciousActivityDetected",
+                new { candidateAssessmentId, candidateName, violationType, reportedAt = DateTime.UtcNow });
             // Also notify admins
             await Clients.Group(AdminMonitoringChannel).SendAsync("SuspiciousActivityDetected",
-                new { assessmentId, candidateName, violationType, reportedAt = DateTime.UtcNow });
+                new { candidateAssessmentId, candidateName, violationType, reportedAt = DateTime.UtcNow });
         }
     }
 }
