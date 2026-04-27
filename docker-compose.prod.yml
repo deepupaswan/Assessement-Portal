@@ -68,7 +68,7 @@ services:
     logging: *default-logging
 
   identity-service:
-    image: myregistry.azurecr.io/identity-service:latest
+    image: ${REGISTRY}/identity-service:${IMAGE_TAG:-latest}
     container_name: identity-service
     restart: unless-stopped
     depends_on:
@@ -105,7 +105,7 @@ services:
     logging: *default-logging
 
   answer-service:
-    image: myregistry.azurecr.io/answer-service:latest
+    image: ${REGISTRY}/answer-service:${IMAGE_TAG:-latest}
     container_name: answer-service
     restart: unless-stopped
     depends_on:
@@ -141,7 +141,7 @@ services:
     logging: *default-logging
 
   assessment-service:
-    image: myregistry.azurecr.io/assessment-service:latest
+    image: ${REGISTRY}/assessment-service:${IMAGE_TAG:-latest}
     container_name: assessment-service
     restart: unless-stopped
     depends_on:
@@ -177,7 +177,7 @@ services:
     logging: *default-logging
 
   candidate-service:
-    image: myregistry.azurecr.io/candidate-service:latest
+    image: ${REGISTRY}/candidate-service:${IMAGE_TAG:-latest}
     container_name: candidate-service
     restart: unless-stopped
     depends_on:
@@ -213,7 +213,7 @@ services:
     logging: *default-logging
 
   result-service:
-    image: myregistry.azurecr.io/result-service:latest
+    image: ${REGISTRY}/result-service:${IMAGE_TAG:-latest}
     container_name: result-service
     restart: unless-stopped
     depends_on:
@@ -249,7 +249,7 @@ services:
     logging: *default-logging
 
   api-gateway:
-    image: myregistry.azurecr.io/api-gateway:latest
+    image: ${REGISTRY}/api-gateway:${IMAGE_TAG:-latest}
     container_name: api-gateway
     restart: unless-stopped
     depends_on:
@@ -286,7 +286,7 @@ services:
     logging: *default-logging
 
   frontend:
-    image: myregistry.azurecr.io/frontend:latest
+    image: ${REGISTRY}/frontend:${IMAGE_TAG:-latest}
     container_name: frontend
     restart: unless-stopped
     depends_on:
