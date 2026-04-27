@@ -4,16 +4,21 @@
     <p class="page-subtitle">Welcome to the Admin Command Center</p>
   </div>
 
+  <div *ngIf="error" class="alert alert-error">
+    <i class="icon icon-alert-circle"></i>
+    <p>{{ error }}</p>
+  </div>
+
   <div class="dashboard-grid">
     <!-- KPI Cards -->
-    <div class="kpi-grid">
+    <div class="kpi-grid" *ngIf="analytics as a; else loadingKpis">
       <div class="kpi-card">
         <div class="kpi-icon" style="background: #dbeafe;">
           <i class="icon icon-users" style="color: #0284c7;"></i>
         </div>
         <div class="kpi-content">
           <p class="kpi-label">Total Candidates</p>
-          <h3 class="kpi-value">1,234</h3>
+          <h3 class="kpi-value">{{ a.totalCandidates }}</h3>
         </div>
       </div>
 
@@ -23,7 +28,7 @@
         </div>
         <div class="kpi-content">
           <p class="kpi-label">Average Score</p>
-          <h3 class="kpi-value">76.5%</h3>
+          <h3 class="kpi-value">{{ (a.averageScore | number: '1.0-1') }}%</h3>
         </div>
       </div>
 
@@ -33,7 +38,7 @@
         </div>
         <div class="kpi-content">
           <p class="kpi-label">Suspicious Cases</p>
-          <h3 class="kpi-value">12</h3>
+          <h3 class="kpi-value">{{ a.suspiciousCases }}</h3>
         </div>
       </div>
 
@@ -43,28 +48,37 @@
         </div>
         <div class="kpi-content">
           <p class="kpi-label">Completion Rate</p>
-          <h3 class="kpi-value">89%</h3>
+          <h3 class="kpi-value">{{ (a.completionRate | number: '1.0-1') }}%</h3>
         </div>
       </div>
     </div>
+
+    <ng-template #loadingKpis>
+      <div class="kpi-grid">
+        <div class="kpi-card skeleton"></div>
+        <div class="kpi-card skeleton"></div>
+        <div class="kpi-card skeleton"></div>
+        <div class="kpi-card skeleton"></div>
+      </div>
+    </ng-template>
 
     <!-- Quick Actions -->
     <div class="quick-actions">
       <h2>Quick Actions</h2>
       <div class="action-buttons">
-        <button class="action-btn">
+        <button class="action-btn" (click)="createAssessment()" title="Create a new assessment">
           <i class="icon icon-plus"></i>
           <span>Create Assessment</span>
         </button>
-        <button class="action-btn">
+        <button class="action-btn" (click)="addCandidate()" title="Add a new candidate">
           <i class="icon icon-plus"></i>
           <span>Add Candidate</span>
         </button>
-        <button class="action-btn">
+        <button class="action-btn" (click)="assignAssessment()" title="Assign assessment to candidate">
           <i class="icon icon-send"></i>
           <span>Assign Assessment</span>
         </button>
-        <button class="action-btn">
+        <button class="action-btn" (click)="viewLiveProgress()" title="Monitor candidate progress">
           <i class="icon icon-activity"></i>
           <span>View Live Progress</span>
         </button>
@@ -74,28 +88,24 @@
     <!-- Recent Activity -->
     <div class="recent-activity">
       <h2>Recent Activity</h2>
-      <div class="activity-list">
-        <div class="activity-item">
-          <div class="activity-icon">
-            <i class="icon icon-file-text"></i>
+      <div class="activity-list" *ngIf="activityLog.length > 0; else noActivity">
+        <div class="activity-item" *ngFor="let item of activityLog">
+          <div class="activity-icon" [ngClass]="'icon-type-' + item.type">
+            <i [class]="item.icon"></i>
           </div>
           <div class="activity-content">
-            <p class="activity-title">New assessment created</p>
-            <p class="activity-desc">JavaScript Fundamentals</p>
-            <span class="activity-time">2 hours ago</span>
-          </div>
-        </div>
-        <div class="activity-item">
-          <div class="activity-icon">
-            <i class="icon icon-user-plus"></i>
-          </div>
-          <div class="activity-content">
-            <p class="activity-title">New candidate registered</p>
-            <p class="activity-desc">John Doe - john&#64;example.com</p>
-            <span class="activity-time">4 hours ago</span>
+            <p class="activity-title">{{ item.title }}</p>
+            <p class="activity-desc">{{ item.description }}</p>
+            <span class="activity-time">{{ formatTime(item.timestamp) }}</span>
           </div>
         </div>
       </div>
+      <ng-template #noActivity>
+        <div class="activity-empty">
+          <p>No recent activity</p>
+        </div>
+      </ng-template>
     </div>
   </div>
 </div>
+
