@@ -45,14 +45,21 @@
 .icon-x::before { content: '✕'; }
 .icon-log-out::before { content: '⎋'; }
 
-/* Form Icons */
+/* Form & Dashboard Icons */
 .icon-plus::before { content: '+'; }
 .icon-check-circle::before { content: '✓'; }
 .icon-alert-circle::before { content: '!'; }
 .icon-trending-up::before { content: '📈'; }
-
-/* Activity Icons */
 .icon-user-plus::before { content: '➕'; }
+.icon-search::before { content: '🔍'; }
+
+/* Assessment Management Icons */
+.icon-edit::before { content: '✎'; }
+.icon-copy::before { content: '⧉'; }
+.icon-trash::before { content: '🗑'; }
+.icon-loader::before { content: '⟳'; }
+.icon-chevron-up::before { content: '⌃'; }
+.icon-chevron-down::before { content: '⌄'; }
 
 /* Note: Replace these with Font Awesome or custom SVG icons for production */
 /* Install Font Awesome: npm install @fortawesome/fontawesome-free */

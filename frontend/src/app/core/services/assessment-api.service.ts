@@ -25,6 +25,18 @@ export class AssessmentApiService {
     return this.http.post<AssessmentSummary>('/api/assessments', payload);
   }
 
+  updateAssessment(id: string, payload: Partial<CreateAssessmentRequest>): Observable<AssessmentSummary> {
+    return this.http.put<AssessmentSummary>(`/api/assessments/${id}`, payload);
+  }
+
+  deleteAssessment(id: string): Observable<void> {
+    return this.http.delete<void>(`/api/assessments/${id}`);
+  }
+
+  cloneAssessment(id: string): Observable<AssessmentSummary> {
+    return this.http.post<AssessmentSummary>(`/api/assessments/${id}/clone`, {});
+  }
+
   listQuestions(assessmentId: string): Observable<AssessmentQuestion[]> {
     return this.http.get<AssessmentQuestion[]>(`/api/assessments/${assessmentId}/questions`);
   }
@@ -33,3 +45,4 @@ export class AssessmentApiService {
     return this.http.post<AssessmentQuestion>(`/api/assessments/${assessmentId}/questions`, payload);
   }
 }
+

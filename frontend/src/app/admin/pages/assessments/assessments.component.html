@@ -1,16 +1,170 @@
 <div class="page-container">
   <div class="page-header">
-    <div class="header-content">
-      <h1>Assessments</h1>
-      <p class="page-subtitle">Create and manage assessments</p>
+    <div class="header-top">
+      <div>
+        <h1>Assessments</h1>
+        <p class="page-subtitle">Manage and create assessments</p>
+      </div>
+      <button class="btn btn-primary" (click)="createAssessment()" title="Create new assessment">
+        <i class="icon icon-plus"></i>
+        <span>Create Assessment</span>
+      </button>
     </div>
-    <button class="btn btn-primary">
-      <i class="icon icon-plus"></i>
-      Create Assessment
-    </button>
   </div>
 
-  <div class="page-content">
-    <p>Assessments page coming soon...</p>
+  <div *ngIf="error" class="alert alert-error">
+    <i class="icon icon-alert-circle"></i>
+    <p>{{ error }}</p>
+  </div>
+
+  <!-- Filters and Search -->
+  <div class="controls-bar">
+    <div class="search-box">
+      <i class="icon icon-search"></i>
+      <input 
+        type="text" 
+        placeholder="Search assessments..." 
+        [(ngModel)]="searchTerm"
+        class="search-input"
+      >
+    </div>
+
+    <div class="filter-tabs">
+      <button 
+        [class.active]="filterType === 'all'"
+        (click)="filterType = 'all'"
+        class="filter-tab"
+      >
+        All ({{ assessments.length }})
+      </button>
+      <button 
+        [class.active]="filterType === 'active'"
+        (click)="filterType = 'active'"
+        class="filter-tab"
+      >
+        Active
+      </button>
+      <button 
+        [class.active]="filterType === 'inactive'"
+        (click)="filterType = 'inactive'"
+        class="filter-tab"
+      >
+        Inactive
+      </button>
+    </div>
+  </div>
+
+  <!-- Assessments Table -->
+  <div class="assessments-section">
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading assessments...</p>
+    </div>
+
+    <div *ngIf="!loading && filteredAssessments.length === 0" class="empty-state">
+      <i class="icon icon-file-text"></i>
+      <h3>No assessments found</h3>
+      <p *ngIf="searchTerm">
+        Try adjusting your search or <a href="javascript:;" (click)="searchTerm = ''">clear filters</a>
+      </p>
+      <p *ngIf="!searchTerm">
+        <button class="btn btn-primary-outline" (click)="createAssessment()">
+          Create your first assessment
+        </button>
+      </p>
+    </div>
+
+    <div *ngIf="!loading && filteredAssessments.length > 0" class="table-wrapper">
+      <table class="assessments-table">
+        <thead>
+          <tr>
+            <th>
+              <button class="sort-header" (click)="changeSortBy('title')">
+                <span>Title</span>
+                <i class="icon" *ngIf="sortBy === 'title'" 
+                   [class.icon-chevron-up]="!sortDesc"
+                   [class.icon-chevron-down]="sortDesc"></i>
+              </button>
+            </th>
+            <th>Description</th>
+            <th class="text-center">
+              <button class="sort-header" (click)="changeSortBy('questions')">
+                <span>Questions</span>
+                <i class="icon" *ngIf="sortBy === 'questions'" 
+                   [class.icon-chevron-up]="!sortDesc"
+                   [class.icon-chevron-down]="sortDesc"></i>
+              </button>
+            </th>
+            <th class="text-center">Duration</th>
+            <th class="text-center">Status</th>
+            <th class="text-center">
+              <button class="sort-header" (click)="changeSortBy('date')">
+                <span>Created</span>
+                <i class="icon" *ngIf="sortBy === 'date'" 
+                   [class.icon-chevron-up]="!sortDesc"
+                   [class.icon-chevron-down]="sortDesc"></i>
+              </button>
+            </th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let assessment of filteredAssessments" [class.deleting]="assessment.isDeleting">
+            <td class="title-cell">
+              <a href="javascript:;" (click)="viewDetails(assessment.id)" class="assessment-link">
+                {{ assessment.title }}
+              </a>
+            </td>
+            <td class="description-cell">
+              <span class="truncate">{{ assessment.description || '-' }}</span>
+            </td>
+            <td class="center">
+              <span class="badge badge-info">{{ assessment.questionCount || 0 }} Q</span>
+            </td>
+            <td class="center">
+              {{ assessment.durationMinutes ? (assessment.durationMinutes + ' min') : '-' }}
+            </td>
+            <td class="center">
+              <span [class]="'badge ' + getStatusBadgeClass(assessment.isActive)">
+                {{ getStatusText(assessment.isActive) }}
+              </span>
+            </td>
+            <td class="center">
+              {{ formatDate(assessment.createdAt) }}
+            </td>
+            <td class="text-right">
+              <div class="action-buttons">
+                <button 
+                  class="btn-icon" 
+                  (click)="editAssessment(assessment.id)"
+                  title="Edit assessment"
+                  [disabled]="assessment.isDeleting"
+                >
+                  <i class="icon icon-edit"></i>
+                </button>
+                <button 
+                  class="btn-icon" 
+                  (click)="cloneAssessment(assessment)"
+                  title="Clone assessment"
+                  [disabled]="assessment.isDeleting"
+                >
+                  <i class="icon icon-copy"></i>
+                </button>
+                <button 
+                  class="btn-icon btn-danger" 
+                  (click)="deleteAssessment(assessment)"
+                  title="Delete assessment"
+                  [disabled]="assessment.isDeleting"
+                >
+                  <i class="icon icon-trash" *ngIf="!assessment.isDeleting"></i>
+                  <i class="icon icon-loader" *ngIf="assessment.isDeleting"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
+

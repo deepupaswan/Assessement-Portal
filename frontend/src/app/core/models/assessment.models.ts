@@ -7,6 +7,13 @@ export interface AssessmentSummary {
   durationMinutes: number;
   questionCount: number;
   isPublished: boolean;
+  isActive?: boolean;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
+export interface Assessment extends AssessmentSummary {
+  // Alias for compatibility
 }
 
 export interface QuestionOption {
