@@ -12,7 +12,8 @@ permissions:
 
 env:
   IMAGE_TAG: ${{ github.sha }}
-  REGISTRY: ${{ secrets.REGISTRY_HOST || format('ghcr.io/{0}', github.repository_owner) }}
+  REGISTRY_HOST: ${{ secrets.REGISTRY_HOST || 'ghcr.io' }}
+  IMAGE_PREFIX: ${{ secrets.IMAGE_PREFIX || secrets.REGISTRY_HOST || format('ghcr.io/{0}', github.repository) }}
   REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME || github.actor }}
   REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD || github.token }}
 
@@ -154,7 +155,7 @@ jobs:
         if: matrix.name != '__skip__'
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ env.REGISTRY_HOST }}
           username: ${{ env.REGISTRY_USERNAME }}
           password: ${{ env.REGISTRY_PASSWORD }}
 
@@ -166,10 +167,10 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ matrix.name }}:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ matrix.name }}:latest
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ matrix.name }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ matrix.name }}:buildcache,mode=max
+            ${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:latest
+          cache-from: type=registry,ref=${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:buildcache,mode=max
 
   deploy:
     name: Deploy to Server
@@ -210,10 +211,10 @@ jobs:
             set -e
             cd "${{ secrets.DEPLOY_PATH }}"
 
-            export REGISTRY="${{ env.REGISTRY }}"
+            export REGISTRY="${{ env.IMAGE_PREFIX }}"
             export IMAGE_TAG="${{ github.sha }}"
 
-            echo "${{ env.REGISTRY_PASSWORD }}" | docker login "${{ env.REGISTRY }}" -u "${{ env.REGISTRY_USERNAME }}" --password-stdin
+            echo "${{ env.REGISTRY_PASSWORD }}" | docker login "${{ env.REGISTRY_HOST }}" -u "${{ env.REGISTRY_USERNAME }}" --password-stdin
 
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
