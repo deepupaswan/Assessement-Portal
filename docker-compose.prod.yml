@@ -253,11 +253,16 @@ services:
     container_name: api-gateway
     restart: unless-stopped
     depends_on:
-      - identity-service
-      - answer-service
-      - assessment-service
-      - candidate-service
-      - result-service
+      identity-service:
+        condition: service_healthy
+      answer-service:
+        condition: service_healthy
+      assessment-service:
+        condition: service_healthy
+      candidate-service:
+        condition: service_healthy
+      result-service:
+        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORT: 80
@@ -290,7 +295,8 @@ services:
     container_name: frontend
     restart: unless-stopped
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_healthy
     networks:
       - app-network
     healthcheck:
