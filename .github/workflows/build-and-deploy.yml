@@ -174,7 +174,7 @@ jobs:
   deploy:
     name: Deploy to Server
     runs-on: ubuntu-latest
-    if: needs.determine-services.outputs.has_services == 'true'
+    if: needs.determine-services.outputs.has_services == 'true' && secrets.DEPLOY_HOST != '' && secrets.DEPLOY_USER != '' && secrets.DEPLOY_SSH_KEY != '' && secrets.DEPLOY_PATH != ''
     needs:
       - determine-services
       - build-and-push
