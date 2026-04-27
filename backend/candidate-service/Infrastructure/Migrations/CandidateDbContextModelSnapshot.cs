@@ -65,6 +65,12 @@ namespace CandidateService.Infrastructure.Migrations
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("ScheduledAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("StartedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CandidateId");

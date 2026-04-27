@@ -1,0 +1,25 @@
+<section class="alerts-shell" *ngIf="visibleAlerts.length > 0">
+  <div
+    class="alert-card"
+    *ngFor="let alert of visibleAlerts; trackBy: trackByAlert"
+    [ngClass]="'severity-' + alert.severity">
+    <div class="alert-copy">
+      <div class="alert-heading">
+        <span class="severity-pill">{{ alert.severity }}</span>
+        <strong>{{ alert.candidateName }}</strong>
+        <span>{{ alert.assessmentTitle }}</span>
+      </div>
+      <p>{{ alert.message }}</p>
+      <small>{{ alert.occurredAtUtc | date: 'MMM d, y h:mm:ss a' }}</small>
+    </div>
+
+    <div class="alert-actions">
+      <button class="btn-link" type="button" (click)="inspect.emit(alert.candidateAssessmentId)">
+        Inspect
+      </button>
+      <button class="btn-link muted" type="button" (click)="dismiss.emit(alert.id)">
+        Dismiss
+      </button>
+    </div>
+  </div>
+</section>

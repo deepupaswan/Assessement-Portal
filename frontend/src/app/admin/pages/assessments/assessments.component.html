@@ -5,7 +5,7 @@
         <h1>Assessments</h1>
         <p class="page-subtitle">Manage and create assessments</p>
       </div>
-      <button class="btn btn-primary" (click)="createAssessment()" title="Create new assessment">
+      <button type="button" class="btn btn-primary" (click)="createAssessment()" title="Create new assessment">
         <i class="icon icon-plus"></i>
         <span>Create Assessment</span>
       </button>
@@ -17,34 +17,36 @@
     <p>{{ error }}</p>
   </div>
 
-  <!-- Filters and Search -->
   <div class="controls-bar">
     <div class="search-box">
       <i class="icon icon-search"></i>
-      <input 
-        type="text" 
-        placeholder="Search assessments..." 
+      <input
+        type="text"
+        placeholder="Search assessments..."
         [(ngModel)]="searchTerm"
         class="search-input"
       >
     </div>
 
     <div class="filter-tabs">
-      <button 
+      <button
+        type="button"
         [class.active]="filterType === 'all'"
         (click)="filterType = 'all'"
         class="filter-tab"
       >
         All ({{ assessments.length }})
       </button>
-      <button 
+      <button
+        type="button"
         [class.active]="filterType === 'active'"
         (click)="filterType = 'active'"
         class="filter-tab"
       >
         Active
       </button>
-      <button 
+      <button
+        type="button"
         [class.active]="filterType === 'inactive'"
         (click)="filterType = 'inactive'"
         class="filter-tab"
@@ -54,21 +56,43 @@
     </div>
   </div>
 
-  <!-- Assessments Table -->
   <div class="assessments-section">
     <div *ngIf="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Loading assessments...</p>
+      <div class="table-skeleton">
+        <div class="skeleton-row header">
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line medium"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+        <div class="skeleton-row" *ngFor="let row of [1, 2, 3, 4]">
+          <div class="skeleton-line medium"></div>
+          <div class="skeleton-line long"></div>
+          <div class="skeleton-chip"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-chip short"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-actions">
+            <div class="skeleton-circle"></div>
+            <div class="skeleton-circle"></div>
+            <div class="skeleton-circle"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div *ngIf="!loading && filteredAssessments.length === 0" class="empty-state">
       <i class="icon icon-file-text"></i>
       <h3>No assessments found</h3>
       <p *ngIf="searchTerm">
-        Try adjusting your search or <a href="javascript:;" (click)="searchTerm = ''">clear filters</a>
+        Try adjusting your search or
+        <button type="button" class="inline-link" (click)="searchTerm = ''">clear filters</button>
       </p>
       <p *ngIf="!searchTerm">
-        <button class="btn btn-primary-outline" (click)="createAssessment()">
+        <button type="button" class="btn btn-primary-outline" (click)="createAssessment()">
           Create your first assessment
         </button>
       </p>
@@ -79,30 +103,24 @@
         <thead>
           <tr>
             <th>
-              <button class="sort-header" (click)="changeSortBy('title')">
+              <button type="button" class="sort-header" (click)="changeSortBy('title')">
                 <span>Title</span>
-                <i class="icon" *ngIf="sortBy === 'title'" 
-                   [class.icon-chevron-up]="!sortDesc"
-                   [class.icon-chevron-down]="sortDesc"></i>
+                <i class="icon" *ngIf="sortBy === 'title'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
               </button>
             </th>
             <th>Description</th>
             <th class="text-center">
-              <button class="sort-header" (click)="changeSortBy('questions')">
+              <button type="button" class="sort-header" (click)="changeSortBy('questions')">
                 <span>Questions</span>
-                <i class="icon" *ngIf="sortBy === 'questions'" 
-                   [class.icon-chevron-up]="!sortDesc"
-                   [class.icon-chevron-down]="sortDesc"></i>
+                <i class="icon" *ngIf="sortBy === 'questions'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
               </button>
             </th>
             <th class="text-center">Duration</th>
             <th class="text-center">Status</th>
             <th class="text-center">
-              <button class="sort-header" (click)="changeSortBy('date')">
+              <button type="button" class="sort-header" (click)="changeSortBy('date')">
                 <span>Created</span>
-                <i class="icon" *ngIf="sortBy === 'date'" 
-                   [class.icon-chevron-up]="!sortDesc"
-                   [class.icon-chevron-down]="sortDesc"></i>
+                <i class="icon" *ngIf="sortBy === 'date'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
               </button>
             </th>
             <th class="text-right">Actions</th>
@@ -111,9 +129,9 @@
         <tbody>
           <tr *ngFor="let assessment of filteredAssessments" [class.deleting]="assessment.isDeleting">
             <td class="title-cell">
-              <a href="javascript:;" (click)="viewDetails(assessment.id)" class="assessment-link">
+              <button type="button" (click)="viewDetails(assessment.id)" class="assessment-link">
                 {{ assessment.title }}
-              </a>
+              </button>
             </td>
             <td class="description-cell">
               <span class="truncate">{{ assessment.description || '-' }}</span>
@@ -134,24 +152,27 @@
             </td>
             <td class="text-right">
               <div class="action-buttons">
-                <button 
-                  class="btn-icon" 
+                <button
+                  type="button"
+                  class="btn-icon"
                   (click)="editAssessment(assessment.id)"
                   title="Edit assessment"
                   [disabled]="assessment.isDeleting"
                 >
                   <i class="icon icon-edit"></i>
                 </button>
-                <button 
-                  class="btn-icon" 
+                <button
+                  type="button"
+                  class="btn-icon"
                   (click)="cloneAssessment(assessment)"
                   title="Clone assessment"
                   [disabled]="assessment.isDeleting"
                 >
                   <i class="icon icon-copy"></i>
                 </button>
-                <button 
-                  class="btn-icon btn-danger" 
+                <button
+                  type="button"
+                  class="btn-icon btn-danger"
                   (click)="deleteAssessment(assessment)"
                   title="Delete assessment"
                   [disabled]="assessment.isDeleting"
@@ -167,4 +188,3 @@
     </div>
   </div>
 </div>
-

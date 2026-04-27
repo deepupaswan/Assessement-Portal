@@ -1,12 +1,252 @@
 <div class="page-container">
   <div class="page-header">
-    <div class="header-content">
+    <div class="header-copy">
       <h1>Analytics</h1>
-      <p class="page-subtitle">View detailed insights and reporting</p>
+      <p class="page-subtitle">Performance trends, pass/fail reporting, and assessment-level insights.</p>
+    </div>
+
+    <button class="btn btn-secondary" type="button" (click)="refresh()" [disabled]="loading">
+      Refresh
+    </button>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <div class="filters-card">
+    <div class="filter-group">
+      <label for="assessment-filter">Assessment</label>
+      <select id="assessment-filter" [(ngModel)]="selectedAssessmentId">
+        <option value="all">All assessments</option>
+        <option *ngFor="let assessment of assessments" [value]="assessment.id">
+          {{ assessment.title }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="outcome-filter">Outcome</label>
+      <select id="outcome-filter" [(ngModel)]="selectedOutcome">
+        <option value="all">All outcomes</option>
+        <option value="passed">Passed</option>
+        <option value="failed">Failed</option>
+      </select>
+    </div>
+
+    <div class="filter-group filter-search">
+      <label for="search-filter">Search</label>
+      <input
+        id="search-filter"
+        type="text"
+        [(ngModel)]="searchTerm"
+        placeholder="Candidate or assessment">
     </div>
   </div>
 
-  <div class="page-content">
-    <p>Analytics and reporting page coming soon...</p>
+  <div class="loading-state" *ngIf="loading">
+    <div class="kpi-grid skeleton-grid">
+      <article class="kpi-card skeleton-card" *ngFor="let item of [1,2,3,4]">
+        <span class="skeleton-line short"></span>
+        <span class="skeleton-line medium"></span>
+        <span class="skeleton-line long"></span>
+      </article>
+    </div>
+    <div class="analytics-grid skeleton-panels">
+      <section class="panel skeleton-card" *ngFor="let item of [1,2,3,4]">
+        <div class="panel-header skeleton-header">
+          <div class="header-lines">
+            <span class="skeleton-line medium"></span>
+            <span class="skeleton-line short"></span>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
+
+  <ng-container *ngIf="!loading">
+    <div class="kpi-grid">
+      <article class="kpi-card">
+        <span class="kpi-label">Evaluations</span>
+        <strong class="kpi-value">{{ totalEvaluations }}</strong>
+        <small class="kpi-meta">{{ assessmentsCovered }} assessments in current view</small>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Pass Rate</span>
+        <strong class="kpi-value">{{ passRate | number: '1.0-1' }}%</strong>
+        <small class="kpi-meta">{{ passCount }} passed, {{ failCount }} failed</small>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Average Percentage</span>
+        <strong class="kpi-value">{{ averagePercentage | number: '1.0-1' }}%</strong>
+        <small class="kpi-meta">Raw score avg {{ averageRawScore | number: '1.0-1' }}</small>
+      </article>
+      <article class="kpi-card">
+        <span class="kpi-label">Overview Completion</span>
+        <strong class="kpi-value">{{ overview?.completionRate || 0 | number: '1.0-1' }}%</strong>
+        <small class="kpi-meta">Suspicious cases {{ overview?.suspiciousCases || 0 }}</small>
+      </article>
+    </div>
+
+    <div class="analytics-grid">
+      <section class="panel hero-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Outcome Split</h2>
+            <p>Pass versus fail across the current filter selection</p>
+          </div>
+        </div>
+
+        <div class="outcome-layout">
+          <div class="ring-wrap">
+            <div class="outcome-ring" [style.background]="outcomeRingStyle">
+              <div class="ring-center">
+                <strong>{{ passRate | number: '1.0-0' }}%</strong>
+                <span>pass rate</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="outcome-stats">
+            <div class="outcome-stat success">
+              <span>Passed</span>
+              <strong>{{ passCount }}</strong>
+            </div>
+            <div class="outcome-stat danger">
+              <span>Failed</span>
+              <strong>{{ failCount }}</strong>
+            </div>
+            <div class="highlight-card" *ngIf="topPerformer as result">
+              <span>Top Performer</span>
+              <strong>{{ result.candidateName }}</strong>
+              <small>{{ result.assessmentTitle }} · {{ result.percentage | number: '1.0-1' }}%</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Submission Trend</h2>
+            <p>Rolling seven-day completion activity</p>
+          </div>
+        </div>
+
+        <div class="trend-chart">
+          <div class="trend-bar" *ngFor="let point of submissionTrend">
+            <div class="bar-track">
+              <span [style.height.%]="(point.count / submissionTrendMax) * 100"></span>
+            </div>
+            <strong>{{ point.count }}</strong>
+            <small>{{ point.label }}</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Score Distribution</h2>
+            <p>How candidates are clustering by percentage range</p>
+          </div>
+        </div>
+
+        <div class="distribution-list">
+          <div class="distribution-item" *ngFor="let bucket of scoreBuckets">
+            <div class="distribution-label">
+              <span>{{ bucket.label }}</span>
+              <strong>{{ bucket.count }}</strong>
+            </div>
+            <div class="distribution-bar">
+              <span [style.width.%]="totalEvaluations ? (bucket.count / totalEvaluations) * 100 : 0" [style.background]="bucket.color"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel-wide">
+        <div class="panel-header">
+          <div>
+            <h2>Assessment Performance</h2>
+            <p>Leaderboard by average percentage across filtered results</p>
+          </div>
+        </div>
+
+        <div class="empty-state" *ngIf="assessmentPerformance.length === 0">
+          <p>No assessment analytics available for the current filters.</p>
+        </div>
+
+        <div class="assessment-list" *ngIf="assessmentPerformance.length > 0">
+          <div class="assessment-row" *ngFor="let assessment of assessmentPerformance; trackBy: trackByAssessment">
+            <div class="assessment-copy">
+              <strong>{{ assessment.assessmentTitle }}</strong>
+              <small>{{ assessment.candidateCount }} candidate{{ assessment.candidateCount === 1 ? '' : 's' }}</small>
+            </div>
+            <div class="assessment-metric">
+              <span class="metric-label">Avg %</span>
+              <div class="metric-bar">
+                <span [style.width.%]="assessment.averagePercentage"></span>
+              </div>
+              <strong>{{ assessment.averagePercentage | number: '1.0-1' }}%</strong>
+            </div>
+            <div class="assessment-meta">
+              <span>Pass {{ assessment.passRate | number: '1.0-0' }}%</span>
+              <span>Top {{ assessment.highestScore }}</span>
+              <span *ngIf="assessment.latestCompletedAt">
+                {{ assessment.latestCompletedAt | date: 'MMM d' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel-wide">
+        <div class="panel-header">
+          <div>
+            <h2>Recent Results</h2>
+            <p>Latest completed assessments in the current filter scope</p>
+          </div>
+        </div>
+
+        <div class="table-wrap" *ngIf="recentResults.length > 0; else noResults">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Candidate</th>
+                <th>Assessment</th>
+                <th>Score</th>
+                <th>Outcome</th>
+                <th>Completed</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let result of recentResults; trackBy: trackByResult">
+                <td>
+                  <div class="cell-stack">
+                    <strong>{{ result.candidateName }}</strong>
+                    <small>{{ result.candidateEmail }}</small>
+                  </div>
+                </td>
+                <td>{{ result.assessmentTitle }}</td>
+                <td>{{ result.score }} / {{ result.maxScore }} <small>({{ result.percentage | number: '1.0-1' }}%)</small></td>
+                <td>
+                  <span class="result-pill" [class.pass]="result.isPassed" [class.fail]="!result.isPassed">
+                    {{ result.isPassed ? 'Passed' : 'Failed' }}
+                  </span>
+                </td>
+                <td>{{ result.completedAt | date: 'MMM d, y h:mm a' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <ng-template #noResults>
+          <div class="empty-state">
+            <p>No results match the current analytics filters.</p>
+          </div>
+        </ng-template>
+      </section>
+    </div>
+  </ng-container>
 </div>

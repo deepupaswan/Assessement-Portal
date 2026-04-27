@@ -6,7 +6,9 @@ public class CandidateAssessment
     public Guid CandidateId { get; set; }
     public Guid AssessmentId { get; set; }
     public DateTime AssignedAt { get; set; }
+    public DateTime? ScheduledAtUtc { get; set; }
+    public DateTime? StartedAtUtc { get; set; }
     public DateTime? CompletedAt { get; set; }
-    
+
     public virtual Candidate? Candidate { get; set; }
 }

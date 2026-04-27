@@ -1,20 +1,4 @@
-export interface ResultSummary {
-  candidateAssessmentId: string;
-  candidateName: string;
-  assessmentTitle: string;
-  score: number;
-  maxScore: number;
-  submittedAtUtc: string;
-}
-
-export interface AnalyticsOverview {
-  totalCandidates: number;
-  averageScore: number;
-  suspiciousCases: number;
-  completionRate: number;
-}
-
-export interface ResultDetail {
+export interface ResultRecord {
   id: string;
   candidateId: string;
   assessmentId: string;
@@ -35,3 +19,44 @@ export interface ResultDetail {
   isPassed: boolean;
   passingPercentage?: number;
 }
+
+export interface AnalyticsOverview {
+  totalCandidates: number;
+  averageScore: number;
+  suspiciousCases: number;
+  completionRate: number;
+}
+
+export interface ResultSummary {
+  resultId: string;
+  candidateId: string;
+  assessmentId: string;
+  score: number;
+  maxScore: number;
+  percentage: number;
+  isPassed: boolean;
+  remarks: string;
+  publishedAt?: string;
+}
+
+export interface AssessmentAnalytics {
+  assessmentId: string;
+  totalCandidates: number;
+  passedCount: number;
+  failedCount: number;
+  averageScore: number;
+  averagePercentage: number;
+  highestScore: number;
+  lowestScore: number;
+}
+
+export interface CandidatePerformance {
+  candidateId: string;
+  results: ResultSummary[];
+  averagePercentage: number;
+  totalAssessmentsTaken: number;
+  totalPassed: number;
+  totalFailed: number;
+}
+
+export type ResultDetail = ResultRecord;

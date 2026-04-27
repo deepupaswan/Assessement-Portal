@@ -2,7 +2,7 @@
   <div class="page-header">
     <div class="header-top">
       <div>
-        <button class="btn-back" (click)="goBack()" title="Back to assessments">
+        <button type="button" class="btn-back" (click)="goBack()" title="Back to assessments">
           <i class="icon icon-chevron-left"></i>
         </button>
         <div class="header-content">
@@ -10,7 +10,7 @@
           <p class="page-subtitle">Manage and organize questions</p>
         </div>
       </div>
-      <button class="btn btn-primary" (click)="openCreateForm()" title="Add new question" *ngIf="!showForm">
+      <button type="button" class="btn btn-primary" (click)="openCreateForm()" title="Add new question" *ngIf="!showForm">
         <i class="icon icon-plus"></i>
         <span>Add Question</span>
       </button>
@@ -22,7 +22,6 @@
     <p>{{ error }}</p>
   </div>
 
-  <!-- Question Form -->
   <div class="question-form-section" *ngIf="showForm">
     <div class="form-container">
       <h2>{{ editingQuestion ? 'Edit Question' : 'Create Question' }}</h2>
@@ -47,8 +46,8 @@
 
       <div class="form-group">
         <label>Question Text *</label>
-        <textarea 
-          [(ngModel)]="formData.text" 
+        <textarea
+          [(ngModel)]="formData.text"
           placeholder="Enter question text"
           rows="4"
           class="form-control"
@@ -57,57 +56,54 @@
 
       <div class="form-group">
         <label>Marks / Points *</label>
-        <input 
-          type="number" 
-          [(ngModel)]="formData.marks" 
-          min="1" 
+        <input
+          type="number"
+          [(ngModel)]="formData.marks"
+          min="1"
           max="100"
           class="form-control"
         >
       </div>
 
-      <!-- MCQ Options -->
       <div *ngIf="formData.type === 'MCQ'" class="form-group">
         <label>Options *</label>
         <div class="options-list">
           <div class="option-item" *ngFor="let option of formData.options; let i = index">
-            <input 
-              type="text" 
-              [(ngModel)]="option.text" 
+            <input
+              type="text"
+              [(ngModel)]="option.text"
               placeholder="Option text"
               class="form-control"
             >
             <label class="checkbox-option">
-              <input type="checkbox" [(ngModel)]="option.isCorrect" name="correct">
+              <input type="checkbox" [(ngModel)]="option.isCorrect" [name]="'correct-' + i">
               <span>Correct</span>
             </label>
-            <button class="btn-remove" (click)="removeMCQOption(i)" title="Remove option">
+            <button type="button" class="btn-remove" (click)="removeMCQOption(i)" title="Remove option">
               <i class="icon icon-x"></i>
             </button>
           </div>
         </div>
-        <button class="btn btn-secondary" (click)="addMCQOption()">
+        <button type="button" class="btn btn-secondary" (click)="addMCQOption()">
           <i class="icon icon-plus"></i>
           Add Option
         </button>
       </div>
 
-      <!-- Descriptive Answer -->
       <div *ngIf="formData.type === 'DESCRIPTIVE'" class="form-group">
         <label>Model Answer (Optional)</label>
-        <textarea 
-          [(ngModel)]="formData.correctAnswer" 
+        <textarea
+          [(ngModel)]="formData.correctAnswer"
           placeholder="Provide a sample answer for reference"
           rows="4"
           class="form-control"
         ></textarea>
       </div>
 
-      <!-- Coding Details -->
       <div *ngIf="formData.type === 'CODING'" class="form-group">
         <label>Code Template</label>
-        <textarea 
-          [(ngModel)]="formData.codeTemplate" 
+        <textarea
+          [(ngModel)]="formData.codeTemplate"
           placeholder="Provide starter code (optional)"
           rows="6"
           class="form-control"
@@ -116,8 +112,8 @@
 
       <div *ngIf="formData.type === 'CODING'" class="form-group">
         <label>Expected Output</label>
-        <textarea 
-          [(ngModel)]="formData.expectedOutput" 
+        <textarea
+          [(ngModel)]="formData.expectedOutput"
           placeholder="Expected program output"
           rows="4"
           class="form-control"
@@ -125,50 +121,76 @@
       </div>
 
       <div class="form-actions">
-        <button class="btn btn-secondary" (click)="cancelForm()">Cancel</button>
-        <button class="btn btn-primary" (click)="saveQuestion()">Save Question</button>
+        <button type="button" class="btn btn-secondary" (click)="cancelForm()">Cancel</button>
+        <button type="button" class="btn btn-primary" (click)="saveQuestion()">Save Question</button>
       </div>
     </div>
   </div>
 
-  <!-- Questions List -->
   <div class="questions-section" *ngIf="!showForm">
     <div *ngIf="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Loading assessment...</p>
+      <div class="questions-skeleton">
+        <div class="skeleton-chip-row">
+          <div class="skeleton-chip"></div>
+          <div class="skeleton-chip"></div>
+          <div class="skeleton-chip"></div>
+        </div>
+        <div class="skeleton-question-card" *ngFor="let item of [1, 2, 3]">
+          <div class="skeleton-question-header">
+            <div class="skeleton-chip-row">
+              <div class="skeleton-chip"></div>
+              <div class="skeleton-chip short"></div>
+            </div>
+            <div class="skeleton-chip-row compact">
+              <div class="skeleton-circle"></div>
+              <div class="skeleton-circle"></div>
+              <div class="skeleton-circle"></div>
+            </div>
+          </div>
+          <div class="skeleton-question-body">
+            <div class="skeleton-line long"></div>
+            <div class="skeleton-line medium"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div *ngIf="!loading && questions.length === 0" class="empty-state">
       <i class="icon icon-help-circle"></i>
       <h3>No questions yet</h3>
       <p>Add questions to this assessment to get started</p>
-      <button class="btn btn-primary" (click)="openCreateForm()">Create First Question</button>
+      <button type="button" class="btn btn-primary" (click)="openCreateForm()">Create First Question</button>
     </div>
 
     <div *ngIf="!loading && questions.length > 0" class="questions-list">
       <div class="filter-tabs">
-        <button 
+        <button
+          type="button"
           [class.active]="filterType === 'all'"
           (click)="filterType = 'all'"
           class="filter-tab"
         >
           All ({{ questions.length }})
         </button>
-        <button 
+        <button
+          type="button"
           [class.active]="filterType === 'MCQ'"
           (click)="filterType = 'MCQ'"
           class="filter-tab"
         >
           Multiple Choice
         </button>
-        <button 
+        <button
+          type="button"
           [class.active]="filterType === 'DESCRIPTIVE'"
           (click)="filterType = 'DESCRIPTIVE'"
           class="filter-tab"
         >
           Descriptive
         </button>
-        <button 
+        <button
+          type="button"
           [class.active]="filterType === 'CODING'"
           (click)="filterType = 'CODING'"
           class="filter-tab"
@@ -178,8 +200,8 @@
       </div>
 
       <div class="questions-grid">
-        <div 
-          class="question-card" 
+        <div
+          class="question-card"
           *ngFor="let question of filteredQuestions; let idx = index"
           [class.deleting]="question.isDeleting"
         >
@@ -192,32 +214,36 @@
               <span class="question-number">Q{{ idx + 1 }}</span>
             </div>
             <div class="card-actions">
-              <button 
-                class="btn-icon" 
+              <button
+                type="button"
+                class="btn-icon"
                 (click)="moveQuestion(question, 'up')"
                 [disabled]="idx === 0 || question.isDeleting"
                 title="Move up"
               >
                 <i class="icon icon-chevron-up"></i>
               </button>
-              <button 
-                class="btn-icon" 
+              <button
+                type="button"
+                class="btn-icon"
                 (click)="moveQuestion(question, 'down')"
                 [disabled]="idx === filteredQuestions.length - 1 || question.isDeleting"
                 title="Move down"
               >
                 <i class="icon icon-chevron-down"></i>
               </button>
-              <button 
-                class="btn-icon" 
+              <button
+                type="button"
+                class="btn-icon"
                 (click)="editQuestion(question)"
                 [disabled]="question.isDeleting"
                 title="Edit"
               >
                 <i class="icon icon-edit"></i>
               </button>
-              <button 
-                class="btn-icon btn-danger" 
+              <button
+                type="button"
+                class="btn-icon btn-danger"
                 (click)="deleteQuestion(question)"
                 [disabled]="question.isDeleting"
                 title="Delete"
@@ -230,12 +256,12 @@
 
           <div class="card-content">
             <p class="question-text">{{ question.text || question.prompt }}</p>
-            
+
             <div *ngIf="(question.questionType || question.type) === 'MCQ'" class="options-preview">
               <p class="label">Options:</p>
               <ul>
                 <li *ngFor="let opt of question.options">
-                  <span *ngIf="opt.isCorrect" class="correct-mark">✓</span>
+                  <span *ngIf="opt.isCorrect" class="correct-mark">Correct</span>
                   {{ opt.text }}
                 </li>
               </ul>
@@ -246,4 +272,3 @@
     </div>
   </div>
 </div>
-

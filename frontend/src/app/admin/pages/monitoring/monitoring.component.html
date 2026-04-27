@@ -1,12 +1,130 @@
 <div class="page-container">
   <div class="page-header">
-    <div class="header-content">
+    <div class="header-copy">
       <h1>Live Monitoring</h1>
-      <p class="page-subtitle">Monitor candidate assessments in real-time</p>
+      <p class="page-subtitle">Monitor candidate assessments, proctor anomalies, and drill into individual sessions.</p>
+    </div>
+
+    <div class="header-actions">
+      <span class="connection-pill" [ngClass]="'state-' + connectionState">
+        {{ getConnectionLabel() }}
+      </span>
+      <button class="btn btn-secondary" type="button" (click)="refresh()" [disabled]="loading">
+        Refresh
+      </button>
     </div>
   </div>
 
-  <div class="page-content">
-    <p>Live monitoring page coming soon...</p>
+  <div class="alert alert-error" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <app-alert-notification
+    [alerts]="alerts"
+    (inspect)="selectSession($event)"
+    (dismiss)="dismissAlert($event)">
+  </app-alert-notification>
+
+  <div class="monitoring-grid">
+    <section class="panel panel-wide">
+      <div class="panel-header">
+        <div>
+          <h2>Active Sessions</h2>
+          <p>{{ sessions.length }} sessions in the monitoring queue</p>
+        </div>
+      </div>
+
+      <div class="loading-state" *ngIf="loading">
+        <div class="table-skeleton">
+          <div class="skeleton-row header">
+            <span class="skeleton-line short"></span>
+            <span class="skeleton-line short"></span>
+            <span class="skeleton-line short"></span>
+            <span class="skeleton-line short"></span>
+          </div>
+          <div class="skeleton-row" *ngFor="let item of [1,2,3,4,5]">
+            <span class="skeleton-line medium"></span>
+            <span class="skeleton-line medium"></span>
+            <span class="skeleton-chip"></span>
+            <span class="skeleton-line short"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="!loading && sessions.length === 0">
+        <p>No sessions are currently available for monitoring.</p>
+      </div>
+
+      <div class="table-wrap" *ngIf="!loading && sessions.length > 0">
+        <table class="sessions-table">
+          <thead>
+            <tr>
+              <th>Candidate</th>
+              <th>Assessment</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Suspicious</th>
+              <th>Remaining</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let session of sessions; trackBy: trackBySession"
+              (click)="selectSession(session.candidateAssessmentId)"
+              [class.selected]="session.candidateAssessmentId === selectedSessionId">
+              <td>
+                <div class="primary-cell">
+                  <span class="name">{{ session.candidateName }}</span>
+                  <small>{{ session.candidateEmail || 'Email unavailable' }}</small>
+                </div>
+              </td>
+              <td>
+                <div class="primary-cell">
+                  <span class="name">{{ session.assessmentTitle }}</span>
+                  <small *ngIf="session.startedAtUtc">Started {{ session.startedAtUtc | date: 'MMM d, y h:mm a' }}</small>
+                  <small *ngIf="!session.startedAtUtc && session.scheduledAtUtc">
+                    Scheduled {{ session.scheduledAtUtc | date: 'MMM d, y h:mm a' }}
+                  </small>
+                </div>
+              </td>
+              <td>
+                <span class="status-badge" [ngClass]="'status-' + session.status.toLowerCase()">
+                  {{ session.status }}
+                </span>
+              </td>
+              <td>
+                <div class="progress-cell">
+                  <div class="progress-bar">
+                    <span [style.width.%]="session.completionPercent"></span>
+                  </div>
+                  <strong>{{ session.completionPercent }}%</strong>
+                </div>
+              </td>
+              <td>
+                <span class="risk-count" [class.alert]="session.suspiciousEvents > 0">
+                  {{ session.suspiciousEvents }}
+                </span>
+              </td>
+              <td>{{ formatRemaining(session.remainingSeconds) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="side-stack">
+      <app-proctoring-dashboard
+        [sessions]="sessions"
+        [alerts]="alerts"
+        [selectedSessionId]="selectedSessionId"
+        (inspectSession)="selectSession($event)">
+      </app-proctoring-dashboard>
+
+      <app-candidate-session-detail
+        [session]="selectedSession"
+        [alerts]="selectedSessionAlerts"
+        (close)="clearSelection()">
+      </app-candidate-session-detail>
+    </section>
   </div>
 </div>

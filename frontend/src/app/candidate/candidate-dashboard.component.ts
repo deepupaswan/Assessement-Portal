@@ -38,4 +38,18 @@ export class CandidateDashboardComponent {
   openAssessment(candidateAssessmentId: string): void {
     this.router.navigate(['/candidate/assessment', candidateAssessmentId]);
   }
+
+  canOpenAssignment(assignment: CandidateAssignment): boolean {
+    return assignment.status !== 'Scheduled' &&
+      assignment.status !== 'Submitted' &&
+      assignment.status !== 'Evaluated';
+  }
+
+  getActionLabel(assignment: CandidateAssignment): string {
+    if (assignment.status === 'Scheduled') {
+      return 'Scheduled';
+    }
+
+    return assignment.status === 'InProgress' ? 'Resume' : 'Start';
+  }
 }

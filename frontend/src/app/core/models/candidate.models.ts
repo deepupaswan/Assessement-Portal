@@ -1,6 +1,11 @@
 import { AssessmentQuestion } from './assessment.models';
 
-export type CandidateAssessmentStatus = 'Assigned' | 'InProgress' | 'Submitted' | 'Evaluated';
+export type CandidateAssessmentStatus =
+  | 'Scheduled'
+  | 'Assigned'
+  | 'InProgress'
+  | 'Submitted'
+  | 'Evaluated';
 
 export interface Candidate {
   id: string;
@@ -12,10 +17,15 @@ export interface Candidate {
 
 export interface CandidateAssignment {
   candidateAssessmentId: string;
+  candidateId?: string;
+  candidateName?: string;
   assessmentId: string;
   assessmentTitle: string;
   status: CandidateAssessmentStatus;
+  assignedAtUtc?: string;
+  scheduledAtUtc?: string;
   startTimeUtc?: string;
+  startedAtUtc?: string;
   submittedAtUtc?: string;
   remainingSeconds?: number;
 }

@@ -1,0 +1,110 @@
+<section class="detail-card" *ngIf="session; else emptyDetail">
+  <div class="detail-header">
+    <div>
+      <h3>{{ session.candidateName }}</h3>
+      <p>{{ session.assessmentTitle }}</p>
+    </div>
+    <button class="btn-close" type="button" (click)="close.emit()">x</button>
+  </div>
+
+  <div class="status-row">
+    <span class="status-badge" [ngClass]="'status-' + session.status.toLowerCase()">
+      {{ session.status }}
+    </span>
+    <span class="meta">{{ session.candidateEmail || 'Email unavailable' }}</span>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat">
+      <span>Completion</span>
+      <strong>{{ session.completionPercent }}%</strong>
+    </div>
+    <div class="stat">
+      <span>Suspicious Events</span>
+      <strong>{{ session.suspiciousEvents }}</strong>
+    </div>
+    <div class="stat">
+      <span>Remaining</span>
+      <strong>{{ formatRemaining(session.remainingSeconds) }}</strong>
+    </div>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item" *ngIf="session.assignedAtUtc">
+      <span>Assigned</span>
+      <strong>{{ session.assignedAtUtc | date: 'MMM d, y h:mm a' }}</strong>
+    </div>
+    <div class="timeline-item" *ngIf="session.scheduledAtUtc">
+      <span>Scheduled</span>
+      <strong>{{ session.scheduledAtUtc | date: 'MMM d, y h:mm a' }}</strong>
+    </div>
+    <div class="timeline-item" *ngIf="session.startedAtUtc">
+      <span>Started</span>
+      <strong>{{ session.startedAtUtc | date: 'MMM d, y h:mm a' }}</strong>
+    </div>
+    <div class="timeline-item" *ngIf="session.submittedAtUtc">
+      <span>Submitted</span>
+      <strong>{{ session.submittedAtUtc | date: 'MMM d, y h:mm a' }}</strong>
+    </div>
+  </div>
+
+  <div class="result-card" *ngIf="session.status === 'Submitted'">
+    <h4>Result Snapshot</h4>
+    <div *ngIf="resultLoading" class="muted">Loading result details...</div>
+    <div *ngIf="!resultLoading && resultDetail" class="result-grid">
+      <div>
+        <span>Score</span>
+        <strong>{{ resultDetail.score }} / {{ resultDetail.maxScore }}</strong>
+      </div>
+      <div>
+        <span>Percentage</span>
+        <strong>{{ resultDetail.percentage | number: '1.0-1' }}%</strong>
+      </div>
+      <div>
+        <span>Correct</span>
+        <strong>{{ resultDetail.correctAnswers }}</strong>
+      </div>
+      <div>
+        <span>Wrong</span>
+        <strong>{{ resultDetail.wrongAnswers }}</strong>
+      </div>
+    </div>
+    <div *ngIf="!resultLoading && !resultDetail && session.resultSummary" class="result-grid">
+      <div>
+        <span>Score</span>
+        <strong>{{ session.resultSummary.score }} / {{ session.resultSummary.maxScore }}</strong>
+      </div>
+      <div>
+        <span>Submitted</span>
+        <strong>{{ session.resultSummary.completedAt | date: 'MMM d, y h:mm a' }}</strong>
+      </div>
+    </div>
+    <div *ngIf="!resultLoading && !resultDetail && !session.resultSummary" class="muted">
+      Result details are not available yet.
+    </div>
+  </div>
+
+  <div class="alert-log">
+    <div class="section-header">
+      <h4>Alert History</h4>
+      <span>{{ alerts.length }}</span>
+    </div>
+
+    <div *ngIf="alerts.length === 0" class="muted">No anomalies recorded for this session.</div>
+
+    <div class="alert-item" *ngFor="let alert of alerts">
+      <div>
+        <strong>{{ alert.violationType }}</strong>
+        <p>{{ alert.message }}</p>
+      </div>
+      <small>{{ alert.occurredAtUtc | date: 'MMM d, y h:mm:ss a' }}</small>
+    </div>
+  </div>
+</section>
+
+<ng-template #emptyDetail>
+  <section class="detail-card empty">
+    <h3>Candidate Session Detail</h3>
+    <p>Select a live session from the table or watchlist to inspect it.</p>
+  </section>
+</ng-template>

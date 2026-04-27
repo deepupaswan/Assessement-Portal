@@ -1,50 +1,47 @@
 <div class="page-container">
-  <!-- Page Header -->
   <div class="page-header">
     <div class="header-content">
       <h1>Candidates</h1>
       <p class="page-subtitle">Manage candidates and bulk upload</p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-secondary" (click)="openBulkUpload()" *ngIf="!showBulkUpload">
+      <button type="button" class="btn btn-secondary" (click)="openBulkUpload()" *ngIf="!showBulkUpload">
         <i class="icon icon-upload"></i>
         Bulk Upload
       </button>
-      <button class="btn btn-primary" (click)="openCreateForm()" *ngIf="!showForm">
+      <button type="button" class="btn btn-primary" (click)="openCreateForm()" *ngIf="!showForm">
         <i class="icon icon-plus"></i>
         Add Candidate
       </button>
     </div>
   </div>
 
-  <!-- Error Alert -->
   <div class="alert alert-error" *ngIf="error">
     {{ error }}
   </div>
 
-  <!-- Page Content -->
   <div class="page-content">
-    <!-- Bulk Upload Form -->
     <div class="bulk-upload-section" *ngIf="showBulkUpload">
       <div class="card">
         <div class="card-header">
           <h3>Bulk Upload Candidates</h3>
-          <button class="btn-close" (click)="closeBulkUpload()">✕</button>
+          <button type="button" class="btn-close" (click)="closeBulkUpload()" aria-label="Close bulk upload">
+            <i class="icon icon-x"></i>
+          </button>
         </div>
         <div class="card-body">
           <p class="text-muted">Upload a CSV file with columns: name, email</p>
-          
+
           <div class="form-group">
             <label>Select CSV File</label>
             <input type="file" accept=".csv" (change)="onFileSelected($event)" [disabled]="bulkUploading">
           </div>
 
-          <button class="btn btn-primary" (click)="uploadBulkCandidates()" [disabled]="!bulkUploadFile || bulkUploading">
+          <button type="button" class="btn btn-primary" (click)="uploadBulkCandidates()" [disabled]="!bulkUploadFile || bulkUploading">
             <i class="icon icon-upload"></i>
             {{ bulkUploading ? 'Uploading...' : 'Upload' }}
           </button>
 
-          <!-- Upload Result -->
           <div *ngIf="bulkUploadResult" class="upload-result">
             <div class="result-summary">
               <div class="stat">
@@ -72,20 +69,21 @@
       </div>
     </div>
 
-    <!-- Create/Edit Form -->
     <div class="form-section" *ngIf="showForm">
       <div class="card">
         <div class="card-header">
           <h3>{{ editingCandidate ? 'Edit Candidate' : 'Create New Candidate' }}</h3>
-          <button class="btn-close" (click)="cancelForm()">✕</button>
+          <button type="button" class="btn-close" (click)="cancelForm()" aria-label="Close candidate form">
+            <i class="icon icon-x"></i>
+          </button>
         </div>
         <div class="card-body">
           <div class="form-group">
             <label for="name">Name *</label>
-            <input 
+            <input
               id="name"
-              type="text" 
-              [(ngModel)]="formData.name" 
+              type="text"
+              [(ngModel)]="formData.name"
               placeholder="Full name"
               class="form-control"
             >
@@ -93,38 +91,39 @@
 
           <div class="form-group">
             <label for="email">Email *</label>
-            <input 
+            <input
               id="email"
-              type="email" 
-              [(ngModel)]="formData.email" 
+              type="email"
+              [(ngModel)]="formData.email"
               placeholder="candidate&#64;example.com"
               class="form-control"
             >
           </div>
 
           <div class="form-actions">
-            <button class="btn btn-primary" (click)="saveCandidate()">
+            <button type="button" class="btn btn-primary" (click)="saveCandidate()">
               {{ editingCandidate ? 'Update' : 'Create' }}
             </button>
-            <button class="btn btn-secondary" (click)="cancelForm()">Cancel</button>
+            <button type="button" class="btn btn-secondary" (click)="cancelForm()">Cancel</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Assign Assessment Form -->
     <div class="form-section" *ngIf="showAssignForm">
       <div class="card">
         <div class="card-header">
           <h3>Assign Assessment to {{ assigningCandidate?.name }}</h3>
-          <button class="btn-close" (click)="closeAssignForm()">✕</button>
+          <button type="button" class="btn-close" (click)="closeAssignForm()" aria-label="Close assignment form">
+            <i class="icon icon-x"></i>
+          </button>
         </div>
         <div class="card-body">
           <div class="form-group">
             <label for="assessment">Assessment *</label>
-            <select 
+            <select
               id="assessment"
-              [(ngModel)]="selectedAssessment" 
+              [(ngModel)]="selectedAssessment"
               class="form-control"
             >
               <option value="">Select an assessment</option>
@@ -135,46 +134,47 @@
           </div>
 
           <div class="form-actions">
-            <button class="btn btn-primary" (click)="assignAssessment()" [disabled]="!selectedAssessment">
+            <button type="button" class="btn btn-primary" (click)="assignAssessment()" [disabled]="!selectedAssessment">
               Assign
             </button>
-            <button class="btn btn-secondary" (click)="closeAssignForm()">Cancel</button>
+            <button type="button" class="btn btn-secondary" (click)="closeAssignForm()">Cancel</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Candidates Table -->
     <div class="table-section" *ngIf="!showForm && !showBulkUpload && !showAssignForm">
-      <!-- Search & Filter -->
       <div class="controls-bar">
         <div class="search-box">
           <i class="icon icon-search"></i>
-          <input 
-            type="text" 
-            [(ngModel)]="searchTerm" 
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
             placeholder="Search by name or email..."
             class="search-input"
           >
         </div>
 
         <div class="filter-tabs">
-          <button 
-            class="filter-tab" 
+          <button
+            type="button"
+            class="filter-tab"
             [class.active]="filterStatus === 'all'"
             (click)="filterStatus = 'all'"
           >
             All
           </button>
-          <button 
-            class="filter-tab" 
+          <button
+            type="button"
+            class="filter-tab"
             [class.active]="filterStatus === 'active'"
             (click)="filterStatus = 'active'"
           >
             Active
           </button>
-          <button 
-            class="filter-tab" 
+          <button
+            type="button"
+            class="filter-tab"
             [class.active]="filterStatus === 'assigned'"
             (click)="filterStatus = 'assigned'"
           >
@@ -183,69 +183,86 @@
         </div>
       </div>
 
-      <!-- Loading State -->
-      <div class="loading-spinner" *ngIf="loading">
-        <div class="spinner"></div>
-        <p>Loading candidates...</p>
+      <div class="loading-state" *ngIf="loading">
+        <div class="table-skeleton">
+          <div class="skeleton-row header">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line medium"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+          <div class="skeleton-row" *ngFor="let row of [1, 2, 3, 4]">
+            <div class="skeleton-line medium"></div>
+            <div class="skeleton-line long"></div>
+            <div class="skeleton-chip"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-actions">
+              <div class="skeleton-circle"></div>
+              <div class="skeleton-circle"></div>
+              <div class="skeleton-circle"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Empty State -->
       <div class="empty-state" *ngIf="!loading && filteredCandidates.length === 0">
         <p>No candidates found</p>
-        <button class="btn btn-primary" (click)="openCreateForm()">
+        <button type="button" class="btn btn-primary" (click)="openCreateForm()">
           <i class="icon icon-plus"></i>
           Add First Candidate
         </button>
       </div>
 
-      <!-- Table -->
-      <table class="data-table" *ngIf="!loading && filteredCandidates.length > 0">
-        <thead>
-          <tr>
-            <th class="sortable" (click)="changeSortBy('name')">
-              Name
-              <span class="sort-indicator" *ngIf="sortBy === 'name'">
-                {{ sortDesc ? '▼' : '▲' }}
-              </span>
-            </th>
-            <th class="sortable" (click)="changeSortBy('email')">
-              Email
-              <span class="sort-indicator" *ngIf="sortBy === 'email'">
-                {{ sortDesc ? '▼' : '▲' }}
-              </span>
-            </th>
-            <th>Status</th>
-            <th class="sortable" (click)="changeSortBy('date')">
-              Registered
-              <span class="sort-indicator" *ngIf="sortBy === 'date'">
-                {{ sortDesc ? '▼' : '▲' }}
-              </span>
-            </th>
-            <th class="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let candidate of filteredCandidates">
-            <td class="font-bold">{{ candidate.name }}</td>
-            <td>{{ candidate.email }}</td>
-            <td>
-              <span class="badge badge-success">{{ candidate.status }}</span>
-            </td>
-            <td class="text-muted">{{ candidate.createdAt | date: 'MMM d, y' }}</td>
-            <td class="text-right">
-              <button class="btn-icon" title="Assign Assessment" (click)="openAssignForm(candidate)">
-                ➕
-              </button>
-              <button class="btn-icon" title="Edit" (click)="editCandidate(candidate)">
-                ✎
-              </button>
-              <button class="btn-icon btn-danger" title="Delete" (click)="deleteCandidate(candidate)">
-                🗑
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-card" *ngIf="!loading && filteredCandidates.length > 0">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>
+                <button type="button" class="sort-header" (click)="changeSortBy('name')">
+                  <span>Name</span>
+                  <i class="icon" *ngIf="sortBy === 'name'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
+                </button>
+              </th>
+              <th>
+                <button type="button" class="sort-header" (click)="changeSortBy('email')">
+                  <span>Email</span>
+                  <i class="icon" *ngIf="sortBy === 'email'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
+                </button>
+              </th>
+              <th>Status</th>
+              <th>
+                <button type="button" class="sort-header" (click)="changeSortBy('date')">
+                  <span>Registered</span>
+                  <i class="icon" *ngIf="sortBy === 'date'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
+                </button>
+              </th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let candidate of filteredCandidates">
+              <td class="font-bold">{{ candidate.name }}</td>
+              <td>{{ candidate.email }}</td>
+              <td>
+                <span class="badge badge-success">{{ candidate.status }}</span>
+              </td>
+              <td class="text-muted">{{ candidate.createdAt | date: 'MMM d, y' }}</td>
+              <td class="text-right">
+                <button type="button" class="btn-icon" title="Assign Assessment" (click)="openAssignForm(candidate)">
+                  <i class="icon icon-send"></i>
+                </button>
+                <button type="button" class="btn-icon" title="Edit" (click)="editCandidate(candidate)">
+                  <i class="icon icon-edit"></i>
+                </button>
+                <button type="button" class="btn-icon btn-danger" title="Delete" (click)="deleteCandidate(candidate)">
+                  <i class="icon icon-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>

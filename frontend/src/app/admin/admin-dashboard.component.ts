@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
 import { FormArray, FormBuilder, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { AssessmentQuestion, AssessmentSummary, QuestionType } from '../core/models/assessment.models';
 import { AssessmentProgress, Candidate } from '../core/models/candidate.models';
-import { AnalyticsOverview, ResultSummary } from '../core/models/result.models';
+import { AnalyticsOverview, ResultRecord } from '../core/models/result.models';
 import { AssessmentApiService } from '../core/services/assessment-api.service';
 import { CandidateApiService } from '../core/services/candidate-api.service';
 import { ResultApiService } from '../core/services/result-api.service';
@@ -19,7 +20,7 @@ export class AdminDashboardComponent {
   candidates: Candidate[] = [];
   candidateSearch = '';
   liveProgress: AssessmentProgress[] = [];
-  results: ResultSummary[] = [];
+  results: RecentResultView[] = [];
   selectedQuestions: AssessmentQuestion[] = [];
   analytics: AnalyticsOverview | null = null;
   loading = false;
@@ -245,30 +246,22 @@ export class AdminDashboardComponent {
     this.loading = true;
     this.error = null;
 
-    this.assessmentApi.listAssessments().subscribe({
-      next: assessments => {
+    forkJoin({
+      assessments: this.assessmentApi.listAssessments(),
+      candidates: this.candidateApi.listCandidates(),
+      progress: this.candidateApi.getLiveProgress(),
+      results: this.resultApi.getResults(),
+      analytics: this.resultApi.getAnalyticsOverview()
+    }).subscribe({
+      next: ({ assessments, candidates, progress, results, analytics }) => {
         this.assessments = assessments;
+        this.candidates = candidates;
+        this.liveProgress = progress;
+        this.analytics = analytics;
+        this.results = this.mapRecentResults(results, candidates, assessments).slice(0, 8);
       },
       error: err => {
-        this.error = err.error?.message ?? 'Unable to load assessments.';
-      }
-    });
-
-    this.candidateApi.getLiveProgress().subscribe({
-      next: progress => {
-        this.liveProgress = progress;
-      }
-    });
-
-    this.resultApi.getResults().subscribe({
-      next: results => {
-        this.results = results.slice(0, 8);
-      }
-    });
-
-    this.resultApi.getAnalyticsOverview().subscribe({
-      next: analytics => {
-        this.analytics = analytics;
+        this.error = err.error?.message ?? 'Unable to load dashboard.';
       },
       complete: () => {
         this.loading = false;
@@ -298,7 +291,10 @@ export class AdminDashboardComponent {
       this.activityLog = this.activityLog.slice(0, 20);
     });
 
-    this.signalR.on<string>('SuspiciousActivityDetected', message => {
+    this.signalR.on<{ candidateName?: string; violationType?: string } | string>('SuspiciousActivityDetected', payload => {
+      const message = typeof payload === 'string'
+        ? payload
+        : `${payload.candidateName || 'Candidate'} triggered ${payload.violationType || 'an alert'}`;
       this.activityLog.unshift(`Suspicious activity: ${message}`);
       this.activityLog = this.activityLog.slice(0, 20);
     });
@@ -341,4 +337,31 @@ export class AdminDashboardComponent {
     this.questionOptions.push(this.createOptionGroup('Option A', false, 1));
     this.questionOptions.push(this.createOptionGroup('Option B', true, 2));
   }
+
+  private mapRecentResults(
+    results: ResultRecord[],
+    candidates: Candidate[],
+    assessments: AssessmentSummary[]
+  ): RecentResultView[] {
+    const candidateMap = new Map(candidates.map(candidate => [candidate.id, candidate]));
+    const assessmentMap = new Map(assessments.map(assessment => [assessment.id, assessment]));
+
+    return [...results]
+      .sort((left, right) => new Date(right.completedAt).getTime() - new Date(left.completedAt).getTime())
+      .map(result => ({
+        id: result.id,
+        candidateName: candidateMap.get(result.candidateId)?.name || 'Candidate',
+        assessmentTitle: assessmentMap.get(result.assessmentId)?.title || 'Assessment',
+        score: result.score,
+        maxScore: result.maxScore
+      }));
+  }
+}
+
+interface RecentResultView {
+  id: string;
+  candidateName: string;
+  assessmentTitle: string;
+  score: number;
+  maxScore: number;
 }

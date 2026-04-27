@@ -159,7 +159,7 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
     }
 
     this.signalR.startConnection(environment.signalRHubUrl, user.token).then(() => {
-      this.signalR.send('JoinAssessmentChannel', candidateAssessmentId);
+      this.signalR.send('JoinAssessmentChannel', candidateAssessmentId, user.name);
     });
 
     this.signalR.on<number>('TimerUpdated', remainingSeconds => {
@@ -222,11 +222,12 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
   }
 
   private sendProgress(progress: number): void {
-    if (!this.session || !this.signalR.isConnected()) {
+    const user = this.authService.getUser();
+    if (!this.session || !this.signalR.isConnected() || !user) {
       return;
     }
 
-    this.signalR.send('UpdateProgress', this.session.candidateAssessmentId, progress);
+    this.signalR.send('UpdateProgress', this.session.candidateAssessmentId, progress, user.name);
   }
 
   private readonly onVisibilityChange = (): void => {
@@ -242,6 +243,7 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
   };
 
   private raiseViolation(type: string, metadata: string): void {
+    const user = this.authService.getUser();
     if (!this.session) {
       return;
     }
@@ -254,6 +256,10 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
       violationType: type,
       metadata
     }).subscribe();
+
+    if (this.signalR.isConnected() && user) {
+      this.signalR.send('ReportSuspiciousActivity', this.session.candidateAssessmentId, user.name, type);
+    }
 
     const maxViolations = this.session.allowedViolations || environment.maxViolations;
     if (this.violationCount >= maxViolations) {

@@ -1,0 +1,47 @@
+<section class="proctor-card">
+  <div class="card-header">
+    <div>
+      <h3>Proctoring Watchlist</h3>
+      <p>Flagged candidates and live risk indicators</p>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat">
+      <span class="label">Active Sessions</span>
+      <strong>{{ activeSessionsCount }}</strong>
+    </div>
+    <div class="stat">
+      <span class="label">Critical Alerts</span>
+      <strong>{{ criticalAlertCount }}</strong>
+    </div>
+    <div class="stat">
+      <span class="label">Flagged Candidates</span>
+      <strong>{{ flaggedSessions.length }}</strong>
+    </div>
+  </div>
+
+  <div class="watchlist" *ngIf="flaggedSessions.length > 0; else noFlags">
+    <button
+      class="watch-item"
+      type="button"
+      *ngFor="let session of flaggedSessions"
+      [class.selected]="session.candidateAssessmentId === selectedSessionId"
+      (click)="inspectSession.emit(session.candidateAssessmentId)">
+      <div class="watch-copy">
+        <strong>{{ session.candidateName }}</strong>
+        <span>{{ session.assessmentTitle }}</span>
+      </div>
+      <div class="watch-meta">
+        <span class="danger-pill">{{ session.suspiciousEvents }} flags</span>
+        <small>{{ session.latestAlert?.violationType || 'Under review' }}</small>
+      </div>
+    </button>
+  </div>
+
+  <ng-template #noFlags>
+    <div class="empty-state">
+      <p>No candidates are currently flagged.</p>
+    </div>
+  </ng-template>
+</section>

@@ -1,0 +1,94 @@
+@import '../../../../styles/admin.shared.scss';
+
+.alerts-shell {
+  display: grid;
+  gap: $space-md;
+  margin-bottom: $space-xl;
+}
+
+.alert-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-lg;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $space-lg;
+  background: $color-bg-primary;
+  box-shadow: $shadow-sm;
+
+  &.severity-warning {
+    border-color: #fcd34d;
+    background: #fffbeb;
+  }
+
+  &.severity-critical {
+    border-color: #fda4af;
+    background: #fff1f2;
+  }
+}
+
+.alert-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+
+  p,
+  small {
+    margin: 0;
+  }
+
+  p {
+    color: $color-text-primary;
+    font-size: $font-size-md;
+  }
+
+  small {
+    color: $color-text-secondary;
+    font-size: $font-size-xs;
+  }
+}
+
+.alert-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-sm;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+}
+
+.severity-pill {
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.8);
+  color: $color-text-primary;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.alert-actions {
+  display: flex;
+  gap: $space-md;
+}
+
+.btn-link {
+  border: none;
+  background: transparent;
+  color: $color-primary;
+  cursor: pointer;
+  font-size: $font-size-sm;
+  font-weight: 600;
+
+  &.muted {
+    color: $color-text-secondary;
+  }
+}
+
+@media (max-width: $breakpoint-md) {
+  .alert-card {
+    flex-direction: column;
+  }
+}

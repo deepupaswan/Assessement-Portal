@@ -83,6 +83,19 @@ public class CandidatesController : ControllerBase
         return Ok(assignment);
     }
 
+    [HttpGet("assignments")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAssignments()
+    {
+        var assignments = await _assessmentService.GetAllAssignmentsAsync();
+        var response = new List<CandidateAssignmentDto>();
+
+        foreach (var assignment in assignments)
+            response.Add(await MapAssignmentAsync(assignment));
+
+        return Ok(response);
+    }
+
     [HttpPost("assignments")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AssignAssessmentToCandidate([FromBody] AssignmentRequest request)
@@ -94,10 +107,62 @@ public class CandidatesController : ControllerBase
         if (candidate == null)
             return NotFound(new { message = "Candidate not found" });
 
-        var assignment = await _assessmentService.AssignAssessmentAsync(request.CandidateId, request.AssessmentId);
+        var assignment = await _assessmentService.AssignAssessmentAsync(
+            request.CandidateId,
+            request.AssessmentId,
+            request.ScheduledAtUtc);
         await PublishAssignmentCreatedEventAsync(assignment);
         var response = await MapAssignmentAsync(assignment);
         return Ok(response);
+    }
+
+    [HttpPut("assignments/{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateAssignment(Guid id, [FromBody] AssignmentRequest request)
+    {
+        if (request.CandidateId == Guid.Empty || request.AssessmentId == Guid.Empty)
+            return BadRequest(new { message = "Candidate ID and Assessment ID are required" });
+
+        var candidate = await _candidateService.GetCandidateByIdAsync(request.CandidateId);
+        if (candidate == null)
+            return NotFound(new { message = "Candidate not found" });
+
+        try
+        {
+            var assignment = await _assessmentService.UpdateAssignmentAsync(
+                id,
+                request.CandidateId,
+                request.AssessmentId,
+                request.ScheduledAtUtc);
+
+            if (assignment == null)
+                return NotFound(new { message = "Assignment not found" });
+
+            var response = await MapAssignmentAsync(assignment);
+            return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("assignments/{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteAssignment(Guid id)
+    {
+        try
+        {
+            var deleted = await _assessmentService.DeleteAssignmentAsync(id);
+            if (!deleted)
+                return NotFound(new { message = "Assignment not found" });
+
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 
     private async Task PublishAssignmentCreatedEventAsync(CandidateService.Domain.Entities.CandidateAssessment assignment)
@@ -153,6 +218,9 @@ public class CandidatesController : ControllerBase
         if (assignment.CandidateId != currentCandidate.Id)
             return Forbid();
 
+        if (assignment.ScheduledAtUtc.HasValue && assignment.ScheduledAtUtc.Value > DateTime.UtcNow)
+            return Conflict(new { message = "This assessment is scheduled for later." });
+
         var assessment = await GetAssessmentAsync(assignment.AssessmentId);
         if (assessment == null)
             return NotFound(new { message = "Assessment not found" });
@@ -201,6 +269,13 @@ public class CandidatesController : ControllerBase
 
         if (assignment.CandidateId != currentCandidate.Id)
             return Forbid();
+
+        if (assignment.ScheduledAtUtc.HasValue && assignment.ScheduledAtUtc.Value > DateTime.UtcNow)
+            return Conflict(new { message = "This assessment is scheduled for later." });
+
+        var started = await _assessmentService.StartAssessmentAsync(candidateAssessmentId);
+        if (!started)
+            return NotFound(new { message = "Assignment not found" });
 
         return NoContent();
     }
@@ -263,7 +338,7 @@ public class CandidatesController : ControllerBase
                 {
                     CandidateAssessmentId = assignment.Id,
                     CandidateName = candidate.Name,
-                    Status = assignment.CompletedAt.HasValue ? "Submitted" : "Assigned",
+                    Status = GetAssignmentStatus(assignment),
                     CompletionPercent = assignment.CompletedAt.HasValue ? 100 : 0,
                     SuspiciousEvents = 0,
                     RemainingSeconds = GetRemainingSeconds(assignment, duration)
@@ -307,10 +382,14 @@ public class CandidatesController : ControllerBase
         {
             CandidateAssessmentId = assignment.Id,
             CandidateId = assignment.CandidateId,
+            CandidateName = assignment.Candidate?.Name ?? string.Empty,
             AssessmentId = assignment.AssessmentId,
             AssessmentTitle = assessment?.Title ?? "Assessment",
-            Status = assignment.CompletedAt.HasValue ? "Submitted" : "Assigned",
-            StartTimeUtc = assignment.AssignedAt,
+            Status = GetAssignmentStatus(assignment),
+            AssignedAtUtc = assignment.AssignedAt,
+            ScheduledAtUtc = assignment.ScheduledAtUtc,
+            StartTimeUtc = assignment.StartedAtUtc ?? assignment.AssignedAt,
+            StartedAtUtc = assignment.StartedAtUtc,
             SubmittedAtUtc = assignment.CompletedAt,
             RemainingSeconds = GetRemainingSeconds(assignment, durationMinutes)
         };
@@ -359,9 +438,28 @@ public class CandidatesController : ControllerBase
         if (assignment.CompletedAt.HasValue)
             return 0;
 
-        var elapsed = DateTime.UtcNow - assignment.AssignedAt;
+        var totalSeconds = Math.Max(durationMinutes, 1) * 60;
+
+        if (!assignment.StartedAtUtc.HasValue)
+            return totalSeconds;
+
+        var elapsed = DateTime.UtcNow - assignment.StartedAtUtc.Value;
         var remaining = TimeSpan.FromMinutes(Math.Max(durationMinutes, 1)) - elapsed;
         return Math.Max((int)remaining.TotalSeconds, 0);
+    }
+
+    private static string GetAssignmentStatus(CandidateService.Domain.Entities.CandidateAssessment assignment)
+    {
+        if (assignment.CompletedAt.HasValue)
+            return "Submitted";
+
+        if (assignment.StartedAtUtc.HasValue)
+            return "InProgress";
+
+        if (assignment.ScheduledAtUtc.HasValue && assignment.ScheduledAtUtc.Value > DateTime.UtcNow)
+            return "Scheduled";
+
+        return "Assigned";
     }
 
     private string? GetCurrentUserEmail()

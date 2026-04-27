@@ -21,6 +21,7 @@
             <tr>
               <th>Assessment</th>
               <th>Status</th>
+              <th>Availability</th>
               <th>Remaining Time</th>
               <th class="text-end">Action</th>
             </tr>
@@ -31,14 +32,17 @@
               <td>
                 <span class="badge text-bg-secondary">{{ assignment.status }}</span>
               </td>
+              <td>
+                {{ assignment.scheduledAtUtc ? (assignment.scheduledAtUtc | date: 'MMM d, y h:mm a') : 'Now' }}
+              </td>
               <td>{{ assignment.remainingSeconds ? (assignment.remainingSeconds / 60 | number: '1.0-0') + ' min' : 'N/A' }}</td>
               <td class="text-end">
                 <button
                   class="btn btn-primary btn-sm"
                   type="button"
-                  [disabled]="assignment.status === 'Submitted' || assignment.status === 'Evaluated'"
+                  [disabled]="!canOpenAssignment(assignment)"
                   (click)="openAssessment(assignment.candidateAssessmentId)">
-                  {{ assignment.status === 'InProgress' ? 'Resume' : 'Start' }}
+                  {{ getActionLabel(assignment) }}
                 </button>
               </td>
             </tr>

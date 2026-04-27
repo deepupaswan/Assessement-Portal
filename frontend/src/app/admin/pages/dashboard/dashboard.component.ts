@@ -8,7 +8,7 @@ import { ResultApiService } from '../../../core/services/result-api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SignalRService } from '../../../core/services/signalr.service';
 import { environment } from '../../../../environments/environment';
-import { AnalyticsOverview, ResultSummary } from '../../../core/models/result.models';
+import { AnalyticsOverview } from '../../../core/models/result.models';
 import { AssessmentProgress } from '../../../core/models/candidate.models';
 
 interface ActivityItem {
@@ -129,12 +129,15 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     });
 
     // Listen for suspicious activity
-    this.signalR.on<string>('SuspiciousActivityDetected', message => {
+    this.signalR.on<{ candidateName?: string; violationType?: string } | string>('SuspiciousActivityDetected', payload => {
+      const description = typeof payload === 'string'
+        ? payload
+        : `${payload.candidateName || 'Candidate'} triggered ${payload.violationType || 'an alert'}`;
       this.addActivity({
         id: `suspicious-${Date.now()}`,
         icon: 'icon-alert-circle',
         title: 'Suspicious activity detected',
-        description: message,
+        description,
         timestamp: new Date(),
         type: 'result'
       });

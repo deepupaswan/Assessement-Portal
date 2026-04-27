@@ -25,6 +25,7 @@ const routes: Routes = [
       { path: 'candidates', component: CandidatesComponent },
       { path: 'assignments', component: AssignmentsComponent },
       { path: 'monitoring', component: MonitoringComponent },
+      { path: 'monitoring/:candidateAssessmentId', component: MonitoringComponent, data: { breadcrumb: 'Session Detail' } },
       { path: 'analytics', component: AnalyticsComponent }
     ]
   },

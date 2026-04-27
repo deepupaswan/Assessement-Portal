@@ -17,6 +17,9 @@ import { CandidatesComponent } from './pages/candidates/candidates.component';
 import { AssignmentsComponent } from './pages/assignments/assignments.component';
 import { MonitoringComponent } from './pages/monitoring/monitoring.component';
 import { AnalyticsComponent } from './pages/analytics/analytics.component';
+import { AlertNotificationComponent } from './pages/monitoring/components/alert-notification/alert-notification.component';
+import { ProctoringDashboardComponent } from './pages/monitoring/components/proctoring-dashboard/proctoring-dashboard.component';
+import { CandidateSessionDetailComponent } from './pages/monitoring/components/candidate-session-detail/candidate-session-detail.component';
 
 // Old Dashboard (for migration/legacy)
 import { AdminDashboardComponent as LegacyAdminDashboardComponent } from './admin-dashboard.component';
@@ -37,6 +40,9 @@ import { AdminRoutingModule } from './admin-routing.module';
     AssignmentsComponent,
     MonitoringComponent,
     AnalyticsComponent,
+    AlertNotificationComponent,
+    ProctoringDashboardComponent,
+    CandidateSessionDetailComponent,
     // Legacy (temporary)
     LegacyAdminDashboardComponent
   ],

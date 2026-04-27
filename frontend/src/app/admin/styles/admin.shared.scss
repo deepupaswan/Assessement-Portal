@@ -1,9 +1,9 @@
 /* Shared Admin Styles */
 
 /* Colors */
-$color-primary: #0284c7;
-$color-primary-hover: #0369a1;
-$color-primary-light: #dbeafe;
+$color-primary: #0f766e;
+$color-primary-hover: #115e59;
+$color-primary-light: #ccfbf1;
 $color-success: #16a34a;
 $color-success-light: #dcfce7;
 $color-warning: #d97706;
@@ -13,20 +13,22 @@ $color-danger-light: #fee2e2;
 $color-purple: #7c3aed;
 $color-purple-light: #f3e8ff;
 
-$color-text-primary: #1f2937;
-$color-text-secondary: #6b7280;
+$color-text-primary: #111827;
+$color-text-secondary: #4b5563;
 $color-text-tertiary: #9ca3af;
-$color-text-disabled: #d1d5db;
+$color-text-disabled: #cbd5e1;
 
 $color-bg-primary: white;
-$color-bg-secondary: #f9fafb;
-$color-bg-tertiary: #f3f4f6;
-$color-border: #e5e7eb;
-$color-border-light: #d1d5db;
+$color-bg-secondary: #f8fafc;
+$color-bg-tertiary: #f1f5f9;
+$color-bg-quaternary: #e2e8f0;
+$color-border: #e2e8f0;
+$color-border-light: #cbd5e1;
+$color-border-strong: #94a3b8;
 
 /* Shadows */
 $shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+$shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
 $shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
 
 /* Spacing */
@@ -82,6 +84,13 @@ $breakpoint-xl: 1280px;
   transition: $property $duration $timing;
 }
 
+@mixin focus-ring($color: rgba(15, 118, 110, 0.18)) {
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px $color;
+  }
+}
+
 @mixin card {
   background: $color-bg-primary;
   border-radius: $radius-lg;
@@ -98,6 +107,9 @@ $breakpoint-xl: 1280px;
   @include transition;
   @include flex-center;
   gap: $space-md;
+  min-height: 40px;
+  padding: 10px 16px;
+  @include focus-ring();
 }
 
 @mixin button-primary {
@@ -105,8 +117,9 @@ $breakpoint-xl: 1280px;
   background: $color-primary;
   color: white;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: $color-primary-hover;
+    box-shadow: $shadow-md;
   }
 
   &:active {
@@ -125,9 +138,9 @@ $breakpoint-xl: 1280px;
   color: $color-text-primary;
   border: 1px solid $color-border;
 
-  &:hover {
-    background: $color-border;
-    border-color: $color-text-secondary;
+  &:hover:not(:disabled) {
+    background: $color-bg-primary;
+    border-color: $color-border-strong;
   }
 
   &:disabled {
@@ -143,7 +156,7 @@ $breakpoint-xl: 1280px;
   color: $color-danger;
   border: 1px solid $color-danger-light;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: $color-danger-light;
   }
 
@@ -156,22 +169,24 @@ $breakpoint-xl: 1280px;
 
 @mixin input-base {
   width: 100%;
-  padding: $space-md $space-lg;
+  padding: 10px 12px;
   border: 1px solid $color-border;
   border-radius: $radius-md;
   font-family: $font-family;
   font-size: $font-size-md;
   color: $color-text-primary;
+  background: $color-bg-primary;
   @include transition(all, 0.2s);
 
   &::placeholder {
     color: $color-text-tertiary;
   }
 
-  &:focus {
+  &:focus,
+  &:focus-visible {
     outline: none;
     border-color: $color-primary;
-    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
   }
 
   &:disabled {
@@ -212,6 +227,31 @@ $breakpoint-xl: 1280px;
       border-bottom: none;
     }
   }
+}
+
+@mixin page-title {
+  font-size: $font-size-3xl;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: $color-text-primary;
+  margin: 0 0 $space-sm;
+}
+
+@mixin page-subtitle {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin: 0;
+}
+
+@mixin skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.65) 0%,
+    rgba(248, 250, 252, 0.95) 50%,
+    rgba(226, 232, 240, 0.65) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
 
 /* Responsive Grid */
@@ -260,4 +300,73 @@ $breakpoint-xl: 1280px;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+.skeleton-line,
+.skeleton-card,
+.skeleton-chip,
+.skeleton-circle {
+  @include skeleton-shimmer;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 999px;
+
+  &.short {
+    width: 38%;
+  }
+
+  &.medium {
+    width: 62%;
+  }
+
+  &.long {
+    width: 100%;
+  }
+}
+
+.skeleton-card {
+  @include card;
+  min-height: 120px;
+}
+
+.skeleton-chip {
+  height: 28px;
+  width: 96px;
+  border-radius: 999px;
+}
+
+.skeleton-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+}
+
+.page-shell {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.page-shell-header {
+  @include flex-between;
+  gap: $space-lg;
+  margin-bottom: $space-2xl;
+}
+
+.page-shell-title {
+  @include page-title;
+}
+
+.page-shell-subtitle {
+  @include page-subtitle;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }

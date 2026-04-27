@@ -10,11 +10,10 @@
   </div>
 
   <div class="dashboard-grid">
-    <!-- KPI Cards -->
     <div class="kpi-grid" *ngIf="analytics as a; else loadingKpis">
       <div class="kpi-card">
-        <div class="kpi-icon" style="background: #dbeafe;">
-          <i class="icon icon-users" style="color: #0284c7;"></i>
+        <div class="kpi-icon candidates">
+          <i class="icon icon-users"></i>
         </div>
         <div class="kpi-content">
           <p class="kpi-label">Total Candidates</p>
@@ -23,8 +22,8 @@
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-icon" style="background: #dcfce7;">
-          <i class="icon icon-trending-up" style="color: #16a34a;"></i>
+        <div class="kpi-icon score">
+          <i class="icon icon-trending-up"></i>
         </div>
         <div class="kpi-content">
           <p class="kpi-label">Average Score</p>
@@ -33,8 +32,8 @@
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-icon" style="background: #fef3c7;">
-          <i class="icon icon-alert-circle" style="color: #d97706;"></i>
+        <div class="kpi-icon alert">
+          <i class="icon icon-alert-circle"></i>
         </div>
         <div class="kpi-content">
           <p class="kpi-label">Suspicious Cases</p>
@@ -43,8 +42,8 @@
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-icon" style="background: #f3e8ff;">
-          <i class="icon icon-check-circle" style="color: #7c3aed;"></i>
+        <div class="kpi-icon completion">
+          <i class="icon icon-check-circle"></i>
         </div>
         <div class="kpi-content">
           <p class="kpi-label">Completion Rate</p>
@@ -55,37 +54,38 @@
 
     <ng-template #loadingKpis>
       <div class="kpi-grid">
-        <div class="kpi-card skeleton"></div>
-        <div class="kpi-card skeleton"></div>
-        <div class="kpi-card skeleton"></div>
-        <div class="kpi-card skeleton"></div>
+        <div class="kpi-card skeleton" *ngFor="let item of [1, 2, 3, 4]">
+          <div class="skeleton-circle"></div>
+          <div class="kpi-content">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line medium"></div>
+          </div>
+        </div>
       </div>
     </ng-template>
 
-    <!-- Quick Actions -->
     <div class="quick-actions">
       <h2>Quick Actions</h2>
       <div class="action-buttons">
-        <button class="action-btn" (click)="createAssessment()" title="Create a new assessment">
+        <button type="button" class="action-btn" (click)="createAssessment()" title="Create a new assessment">
           <i class="icon icon-plus"></i>
           <span>Create Assessment</span>
         </button>
-        <button class="action-btn" (click)="addCandidate()" title="Add a new candidate">
+        <button type="button" class="action-btn" (click)="addCandidate()" title="Add a new candidate">
           <i class="icon icon-plus"></i>
           <span>Add Candidate</span>
         </button>
-        <button class="action-btn" (click)="assignAssessment()" title="Assign assessment to candidate">
+        <button type="button" class="action-btn" (click)="assignAssessment()" title="Assign assessment to candidate">
           <i class="icon icon-send"></i>
           <span>Assign Assessment</span>
         </button>
-        <button class="action-btn" (click)="viewLiveProgress()" title="Monitor candidate progress">
+        <button type="button" class="action-btn" (click)="viewLiveProgress()" title="Monitor candidate progress">
           <i class="icon icon-activity"></i>
           <span>View Live Progress</span>
         </button>
       </div>
     </div>
 
-    <!-- Recent Activity -->
     <div class="recent-activity">
       <h2>Recent Activity</h2>
       <div class="activity-list" *ngIf="activityLog.length > 0; else noActivity">
@@ -108,4 +108,3 @@
     </div>
   </div>
 </div>
-

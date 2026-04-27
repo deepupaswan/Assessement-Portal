@@ -1,0 +1,131 @@
+@import '../../../../styles/admin.shared.scss';
+
+.proctor-card {
+  @include card;
+  padding: $space-xl;
+}
+
+.card-header {
+  margin-bottom: $space-lg;
+
+  h3 {
+    margin: 0 0 4px;
+    color: $color-text-primary;
+    font-size: $font-size-xl;
+  }
+
+  p {
+    margin: 0;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: $space-md;
+  margin-bottom: $space-lg;
+}
+
+.stat {
+  border-radius: $radius-lg;
+  padding: $space-lg;
+  background: $color-bg-secondary;
+
+  .label {
+    display: block;
+    margin-bottom: 6px;
+    color: $color-text-secondary;
+    font-size: $font-size-xs;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  strong {
+    color: $color-text-primary;
+    font-size: $font-size-xl;
+  }
+}
+
+.watchlist {
+  display: flex;
+  flex-direction: column;
+  gap: $space-sm;
+}
+
+.watch-item {
+  @include flex-between;
+  gap: $space-lg;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $space-lg;
+  background: $color-bg-primary;
+  text-align: left;
+  cursor: pointer;
+
+  &.selected {
+    border-color: $color-primary;
+    background: #eff6ff;
+  }
+}
+
+.watch-copy,
+.watch-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.watch-copy {
+  strong {
+    color: $color-text-primary;
+    font-size: $font-size-md;
+  }
+
+  span {
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+  }
+}
+
+.watch-meta {
+  align-items: flex-end;
+
+  small {
+    color: $color-text-secondary;
+    font-size: $font-size-xs;
+  }
+}
+
+.danger-pill {
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: $color-danger-light;
+  color: $color-danger;
+  font-size: $font-size-xs;
+  font-weight: 700;
+}
+
+.empty-state {
+  border: 1px dashed $color-border;
+  border-radius: $radius-lg;
+  padding: $space-xl;
+  text-align: center;
+  color: $color-text-secondary;
+}
+
+@media (max-width: $breakpoint-md) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .watch-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .watch-meta {
+    align-items: flex-start;
+  }
+}

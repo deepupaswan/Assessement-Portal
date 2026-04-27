@@ -2,15 +2,305 @@
   <div class="page-header">
     <div class="header-content">
       <h1>Assignments</h1>
-      <p class="page-subtitle">Assign assessments to candidates</p>
+      <p class="page-subtitle">Manage assessment assignments and scheduling</p>
     </div>
-    <button class="btn btn-primary">
-      <i class="icon icon-plus"></i>
-      New Assignment
-    </button>
+
+    <div class="header-actions">
+      <button
+        class="btn btn-secondary"
+        type="button"
+        (click)="openBulkForm()"
+        *ngIf="!showBulkForm">
+        <i class="icon icon-send"></i>
+        Bulk Assign
+      </button>
+      <button
+        class="btn btn-primary"
+        type="button"
+        (click)="openCreateForm()"
+        *ngIf="!showForm">
+        <i class="icon icon-plus"></i>
+        New Assignment
+      </button>
+    </div>
+  </div>
+
+  <div class="alert alert-error" *ngIf="error">
+    {{ error }}
   </div>
 
   <div class="page-content">
-    <p>Assignments management page coming soon...</p>
+    <div class="form-section" *ngIf="showForm">
+      <div class="card">
+        <div class="card-header">
+          <h3>{{ editingAssignment ? 'Edit Assignment' : 'Create New Assignment' }}</h3>
+          <button class="btn-close" type="button" (click)="cancelForm()">x</button>
+        </div>
+
+        <div class="card-body">
+          <div class="form-group">
+            <label for="candidate">Candidate *</label>
+            <select id="candidate" [(ngModel)]="formData.candidateId" class="form-control">
+              <option value="">Select a candidate</option>
+              <option *ngFor="let candidate of candidates" [value]="candidate.id">
+                {{ candidate.name }} ({{ candidate.email }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="assessment">Assessment *</label>
+            <select id="assessment" [(ngModel)]="formData.assessmentId" class="form-control">
+              <option value="">Select an assessment</option>
+              <option *ngFor="let assessment of assessments" [value]="assessment.id">
+                {{ assessment.title }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="scheduledAt">Schedule For (Optional)</label>
+            <input
+              id="scheduledAt"
+              type="datetime-local"
+              [(ngModel)]="formData.scheduledAtUtc"
+              [min]="minDateTime"
+              class="form-control">
+            <small class="form-hint">Leave empty to assign immediately</small>
+          </div>
+
+          <div class="form-actions">
+            <button
+              class="btn btn-primary"
+              type="button"
+              (click)="saveAssignment()"
+              [disabled]="saving">
+              {{ saving ? 'Saving...' : editingAssignment ? 'Update' : 'Create' }}
+            </button>
+            <button class="btn btn-secondary" type="button" (click)="cancelForm()" [disabled]="saving">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section" *ngIf="showBulkForm">
+      <div class="card">
+        <div class="card-header">
+          <h3>Bulk Assign Assessment</h3>
+          <button class="btn-close" type="button" (click)="closeBulkForm()">x</button>
+        </div>
+
+        <div class="card-body">
+          <div class="form-group">
+            <label for="bulk-assessment">Assessment *</label>
+            <select id="bulk-assessment" [(ngModel)]="bulkData.assessmentId" class="form-control">
+              <option value="">Select an assessment</option>
+              <option *ngFor="let assessment of assessments" [value]="assessment.id">
+                {{ assessment.title }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="bulk-scheduledAt">Schedule For (Optional)</label>
+            <input
+              id="bulk-scheduledAt"
+              type="datetime-local"
+              [(ngModel)]="bulkData.scheduledAtUtc"
+              [min]="minDateTime"
+              class="form-control">
+          </div>
+
+          <div class="candidates-selector">
+            <div class="selector-header">
+              <h4>Select Candidates</h4>
+              <button class="btn-link" type="button" (click)="toggleAllCandidates()">
+                {{ selectedCandidatesForBulk.size === candidates.length ? 'Deselect All' : 'Select All' }}
+              </button>
+            </div>
+
+            <div class="candidates-list">
+              <div class="candidate-item" *ngFor="let candidate of candidates">
+                <label class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    [checked]="isCandidateSelected(candidate.id)"
+                    (change)="toggleCandidateSelection(candidate.id)">
+                  <span>{{ candidate.name }} ({{ candidate.email }})</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="selection-summary" *ngIf="selectedCandidatesForBulk.size > 0">
+              <p>{{ selectedCandidatesForBulk.size }} candidate(s) selected</p>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button
+              class="btn btn-primary"
+              type="button"
+              (click)="bulkAssign()"
+              [disabled]="!bulkData.assessmentId || selectedCandidatesForBulk.size === 0 || bulkAssigning">
+              <i class="icon icon-send"></i>
+              {{ bulkAssigning ? 'Assigning...' : 'Assign to ' + selectedCandidatesForBulk.size }}
+            </button>
+            <button
+              class="btn btn-secondary"
+              type="button"
+              (click)="closeBulkForm()"
+              [disabled]="bulkAssigning">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-section" *ngIf="!showForm && !showBulkForm">
+      <div class="controls-bar">
+        <div class="search-box">
+          <i class="icon icon-search"></i>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            placeholder="Search by candidate or assessment..."
+            class="search-input">
+        </div>
+
+        <div class="filter-tabs">
+          <button class="filter-tab" type="button" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">
+            All
+          </button>
+          <button
+            class="filter-tab"
+            type="button"
+            [class.active]="filterStatus === 'scheduled'"
+            (click)="filterStatus = 'scheduled'">
+            Scheduled
+          </button>
+          <button
+            class="filter-tab"
+            type="button"
+            [class.active]="filterStatus === 'assigned'"
+            (click)="filterStatus = 'assigned'">
+            Assigned
+          </button>
+          <button
+            class="filter-tab"
+            type="button"
+            [class.active]="filterStatus === 'inprogress'"
+            (click)="filterStatus = 'inprogress'">
+            In Progress
+          </button>
+          <button
+            class="filter-tab"
+            type="button"
+            [class.active]="filterStatus === 'submitted'"
+            (click)="filterStatus = 'submitted'">
+            Submitted
+          </button>
+        </div>
+      </div>
+
+      <div class="loading-spinner" *ngIf="loading">
+        <div class="list-skeleton">
+          <div class="skeleton-toolbar">
+            <span class="skeleton-line long"></span>
+            <span class="skeleton-chip"></span>
+            <span class="skeleton-chip"></span>
+          </div>
+          <div class="skeleton-table">
+            <div class="skeleton-table-row header">
+              <span class="skeleton-line short"></span>
+              <span class="skeleton-line short"></span>
+              <span class="skeleton-line short"></span>
+              <span class="skeleton-line short"></span>
+            </div>
+            <div class="skeleton-table-row" *ngFor="let item of [1,2,3,4]">
+              <span class="skeleton-line medium"></span>
+              <span class="skeleton-line medium"></span>
+              <span class="skeleton-chip"></span>
+              <span class="skeleton-line short"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="!loading && filteredAssignments.length === 0">
+        <p>No assignments found</p>
+        <button class="btn btn-primary" type="button" (click)="openCreateForm()">
+          <i class="icon icon-plus"></i>
+          Create First Assignment
+        </button>
+      </div>
+
+      <table class="data-table" *ngIf="!loading && filteredAssignments.length > 0">
+        <thead>
+          <tr>
+            <th class="sortable" (click)="changeSortBy('candidate')">
+              Candidate
+              <span class="sort-indicator" *ngIf="sortBy === 'candidate'">
+                {{ sortDesc ? 'v' : '^' }}
+              </span>
+            </th>
+            <th class="sortable" (click)="changeSortBy('assessment')">
+              Assessment
+              <span class="sort-indicator" *ngIf="sortBy === 'assessment'">
+                {{ sortDesc ? 'v' : '^' }}
+              </span>
+            </th>
+            <th>Status</th>
+            <th class="sortable" (click)="changeSortBy('date')">
+              Scheduled
+              <span class="sort-indicator" *ngIf="sortBy === 'date'">
+                {{ sortDesc ? 'v' : '^' }}
+              </span>
+            </th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let assignment of filteredAssignments">
+            <td class="font-bold">{{ assignment.candidateName }}</td>
+            <td>{{ assignment.assessmentTitle }}</td>
+            <td>
+              <span class="badge" [ngClass]="'badge-' + assignment.status.toLowerCase()">
+                {{ assignment.status }}
+              </span>
+            </td>
+            <td class="text-muted">
+              <div class="date-cell">
+                <span>{{ assignment.scheduledAt ? (assignment.scheduledAt | date: 'MMM d, y h:mm a') : 'Immediate' }}</span>
+                <small *ngIf="assignment.createdAt">
+                  Assigned {{ assignment.createdAt | date: 'MMM d, y h:mm a' }}
+                </small>
+              </div>
+            </td>
+            <td class="text-right">
+              <button
+                class="btn-icon"
+                type="button"
+                title="Edit"
+                (click)="editAssignment(assignment)"
+                [disabled]="!canEdit(assignment)">
+                Edit
+              </button>
+              <button
+                class="btn-icon btn-danger"
+                type="button"
+                title="Delete"
+                (click)="deleteAssignment(assignment)"
+                [disabled]="!canDelete(assignment) || isDeleting(assignment.id)">
+                {{ isDeleting(assignment.id) ? '...' : 'Delete' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>

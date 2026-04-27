@@ -15,8 +15,20 @@ import { ResultDetail } from '../models/result.models';
 export class CandidateApiService {
   constructor(private http: HttpClient) {}
 
-  assignAssessment(payload: AssignmentRequest): Observable<void> {
-    return this.http.post<void>('/api/candidates/assignments', payload);
+  assignAssessment(payload: AssignmentRequest): Observable<CandidateAssignment> {
+    return this.http.post<CandidateAssignment>('/api/candidates/assignments', payload);
+  }
+
+  getAssignments(): Observable<CandidateAssignment[]> {
+    return this.http.get<CandidateAssignment[]>('/api/candidates/assignments');
+  }
+
+  updateAssignment(id: string, payload: AssignmentRequest): Observable<CandidateAssignment> {
+    return this.http.put<CandidateAssignment>(`/api/candidates/assignments/${id}`, payload);
+  }
+
+  deleteAssignment(id: string): Observable<void> {
+    return this.http.delete<void>(`/api/candidates/assignments/${id}`);
   }
 
   listCandidates(): Observable<Candidate[]> {
