@@ -138,7 +138,7 @@ jobs:
 
     steps:
       - name: Build selection summary
-        run: echo "Selected services: ${{ needs.determine-services.outputs.service_names }}"
+        run: 'echo "Selected services: ${{ needs.determine-services.outputs.service_names }}"'
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -178,7 +178,7 @@ jobs:
 
     steps:
       - name: Deploy selection summary
-        run: echo "Deploying services: ${{ needs.determine-services.outputs.service_names }}"
+        run: 'echo "Deploying services: ${{ needs.determine-services.outputs.service_names }}"'
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
