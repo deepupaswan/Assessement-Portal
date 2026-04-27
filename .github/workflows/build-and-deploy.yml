@@ -174,16 +174,33 @@ jobs:
   deploy:
     name: Deploy to Server
     runs-on: ubuntu-latest
-    if: needs.determine-services.outputs.has_services == 'true' && secrets.DEPLOY_HOST != '' && secrets.DEPLOY_USER != '' && secrets.DEPLOY_SSH_KEY != '' && secrets.DEPLOY_PATH != ''
+    if: needs.determine-services.outputs.has_services == 'true'
     needs:
       - determine-services
       - build-and-push
 
     steps:
+      - name: Check deploy configuration
+        id: deploy-ready
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.DEPLOY_HOST }}" ] || [ -z "${{ secrets.DEPLOY_USER }}" ] || [ -z "${{ secrets.DEPLOY_SSH_KEY }}" ] || [ -z "${{ secrets.DEPLOY_PATH }}" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Deploy secrets are not fully configured. Skipping deploy step."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy selection summary
+        if: steps.deploy-ready.outputs.ready == 'true'
         run: 'echo "Deploying services: ${{ needs.determine-services.outputs.service_names }}"'
 
+      - name: Deploy skipped summary
+        if: steps.deploy-ready.outputs.ready != 'true'
+        run: echo "Skipping deploy because DEPLOY_* secrets are missing."
+
       - name: Deploy over SSH
+        if: steps.deploy-ready.outputs.ready == 'true'
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
