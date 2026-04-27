@@ -143,7 +143,7 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
   }
 
   viewDetails(id: string): void {
-    this.router.navigate(['/admin/assessments/details', id]);
+    this.router.navigate(['/admin/assessments', id, 'questions']);
   }
 
   changeSortBy(field: 'title' | 'date' | 'questions'): void {
