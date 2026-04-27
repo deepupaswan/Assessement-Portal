@@ -1,0 +1,31 @@
+<aside class="admin-sidebar" [class.open]="isOpen">
+  <div class="sidebar-header">
+    <h3 class="sidebar-title">Assessment Portal</h3>
+    <button class="btn-close-sidebar" (click)="toggleSidebar.emit()" *ngIf="isOpen">
+      <i class="icon icon-x"></i>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <button
+      *ngFor="let item of navItems"
+      class="nav-item"
+      [class.active]="isActive(item.route)"
+      [routerLink]="item.route"
+      (click)="onNavClick()"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: false }">
+      <i [class]="item.icon"></i>
+      <span class="nav-label">{{ item.label }}</span>
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="btn btn-logout">
+      <i class="icon icon-log-out"></i>
+      <span>Logout</span>
+    </button>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" (click)="toggleSidebar.emit()" *ngIf="isOpen && !('innerWidth' | slice:0)"></div>

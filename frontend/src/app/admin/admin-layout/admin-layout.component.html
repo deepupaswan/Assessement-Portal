@@ -1,0 +1,30 @@
+<div class="admin-container">
+  <app-admin-sidebar [isOpen]="sidebarOpen" (toggleSidebar)="toggleSidebar()"></app-admin-sidebar>
+  
+  <div class="admin-main">
+    <header class="admin-header">
+      <div class="admin-header-left">
+        <button class="btn-sidebar-toggle" (click)="toggleSidebar()" title="Toggle sidebar">
+          <i class="icon icon-menu"></i>
+        </button>
+      </div>
+      
+      <div class="admin-header-center">
+        <app-breadcrumbs></app-breadcrumbs>
+      </div>
+      
+      <div class="admin-header-right">
+        <button class="btn btn-icon" title="Notifications">
+          <i class="icon icon-bell"></i>
+        </button>
+        <button class="btn btn-icon" title="User menu">
+          <i class="icon icon-user"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="admin-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

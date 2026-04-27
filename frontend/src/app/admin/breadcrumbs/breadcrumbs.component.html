@@ -1,0 +1,10 @@
+<nav class="breadcrumbs" *ngIf="breadcrumbs.length">
+  <ol class="breadcrumbs-list">
+    <li class="breadcrumb-item">
+      <a routerLink="/admin/dashboard">Admin</a>
+    </li>
+    <li class="breadcrumb-item" *ngFor="let breadcrumb of breadcrumbs">
+      <a [routerLink]="breadcrumb.url">{{ breadcrumb.label }}</a>
+    </li>
+  </ol>
+</nav>
