@@ -13,7 +13,6 @@ permissions:
 env:
   IMAGE_TAG: ${{ github.sha }}
   REGISTRY_HOST: ${{ secrets.REGISTRY_HOST || 'ghcr.io' }}
-  IMAGE_PREFIX: ${{ secrets.IMAGE_PREFIX || secrets.REGISTRY_HOST || format('ghcr.io/{0}', github.repository) | lower }}
   REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME || github.actor }}
   REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD || github.token }}
 
@@ -25,6 +24,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       has_services: ${{ steps.set-matrix.outputs.has_services }}
       service_names: ${{ steps.set-matrix.outputs.service_names }}
+      image_prefix: ${{ steps.image-prefix.outputs.IMAGE_PREFIX }}
 
     steps:
       - name: Checkout
@@ -143,6 +143,21 @@ jobs:
             } >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Set image prefix with lowercase repo
+        id: image-prefix
+        shell: bash
+        run: |
+          IMAGE_PREFIX="${{ secrets.IMAGE_PREFIX }}"
+          if [ -z "$IMAGE_PREFIX" ]; then
+            REGISTRY_HOST="${{ secrets.REGISTRY_HOST }}"
+            if [ -z "$REGISTRY_HOST" ]; then
+              REGISTRY_HOST="ghcr.io"
+            fi
+            REPO_LOWER="$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+            IMAGE_PREFIX="${REGISTRY_HOST}/${REPO_LOWER}"
+          fi
+          echo "IMAGE_PREFIX=$IMAGE_PREFIX" >> "$GITHUB_OUTPUT"
+
   build-and-push:
     name: Build and Push Images
     runs-on: ubuntu-latest
@@ -179,10 +194,10 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:${{ github.sha }}
-            ${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:latest
-          cache-from: type=registry,ref=${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:buildcache
-          cache-to: type=registry,ref=${{ env.IMAGE_PREFIX }}/${{ matrix.name }}:buildcache,mode=max
+            ${{ needs.determine-services.outputs.image_prefix }}/${{ matrix.name }}:${{ github.sha }}
+            ${{ needs.determine-services.outputs.image_prefix }}/${{ matrix.name }}:latest
+          cache-from: type=registry,ref=${{ needs.determine-services.outputs.image_prefix }}/${{ matrix.name }}:buildcache
+          cache-to: type=registry,ref=${{ needs.determine-services.outputs.image_prefix }}/${{ matrix.name }}:buildcache,mode=max
 
   deploy:
     name: Deploy to Server
@@ -230,7 +245,7 @@ jobs:
               set +a
             fi
 
-            export REGISTRY="${{ env.IMAGE_PREFIX }}"
+            export REGISTRY="${{ needs.determine-services.outputs.image_prefix }}"
             export IMAGE_TAG="${{ github.sha }}"
 
             echo "${{ env.REGISTRY_PASSWORD }}" | docker login "${{ env.REGISTRY_HOST }}" -u "${{ env.REGISTRY_USERNAME }}" --password-stdin
