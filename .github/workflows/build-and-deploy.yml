@@ -13,7 +13,7 @@ permissions:
 env:
   IMAGE_TAG: ${{ github.sha }}
   REGISTRY_HOST: ${{ secrets.REGISTRY_HOST || 'ghcr.io' }}
-  IMAGE_PREFIX: ${{ secrets.IMAGE_PREFIX || secrets.REGISTRY_HOST || format('ghcr.io/{0}', github.repository) }}
+  IMAGE_PREFIX: ${{ secrets.IMAGE_PREFIX || secrets.REGISTRY_HOST || format('ghcr.io/{0}', github.repository) | lower }}
   REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME || github.actor }}
   REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD || github.token }}
 

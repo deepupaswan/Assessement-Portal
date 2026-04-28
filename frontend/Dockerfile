@@ -11,8 +11,8 @@ RUN npm ci
 # Copy source code
 COPY frontend/ .
 
-# Build Angular application
-RUN npm run build
+# Build Angular application in production mode
+RUN npm run build -- --configuration production
 
 # Runtime stage - Nginx
 FROM nginx:alpine
