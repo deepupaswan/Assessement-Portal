@@ -9,7 +9,6 @@ import { CandidatesComponent } from './pages/candidates/candidates.component';
 import { AssignmentsComponent } from './pages/assignments/assignments.component';
 import { MonitoringComponent } from './pages/monitoring/monitoring.component';
 import { AnalyticsComponent } from './pages/analytics/analytics.component';
-import { AdminDashboardComponent as LegacyAdminDashboardComponent } from './admin-dashboard.component';
 
 const routes: Routes = [
   {
@@ -29,8 +28,8 @@ const routes: Routes = [
       { path: 'analytics', component: AnalyticsComponent }
     ]
   },
-  // Legacy route for backward compatibility
-  { path: 'legacy', component: LegacyAdminDashboardComponent }
+  // Redirect old bookmarked URLs to the phased dashboard UI.
+  { path: 'legacy', redirectTo: 'dashboard', pathMatch: 'full' }
 ];
 
 @NgModule({
