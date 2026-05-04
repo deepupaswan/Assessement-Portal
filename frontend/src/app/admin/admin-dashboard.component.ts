@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { FormArray, FormBuilder, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
-import { AssessmentQuestion, AssessmentSummary, QuestionType } from '../core/models/assessment.models';
+import { forkJoin, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { AssessmentQuestion, AssessmentSummary, QuestionType, QuestionTypeValues } from '../core/models/assessment.models';
 import { AssessmentProgress, Candidate } from '../core/models/candidate.models';
 import { AnalyticsOverview, ResultRecord } from '../core/models/result.models';
 import { AssessmentApiService } from '../core/services/assessment-api.service';
@@ -10,12 +11,14 @@ import { ResultApiService } from '../core/services/result-api.service';
 import { AuthService } from '../core/services/auth.service';
 import { SignalRService } from '../core/services/signalr.service';
 import { environment } from '../../environments/environment';
+import { RecentResultView } from './models/admin-dashboard.models';
+import { AdminDashboardMessages } from '../constants/admin-dashboard.constants';
 
 @Component({
   selector: 'app-admin-dashboard',
   templateUrl: './admin-dashboard.component.html',
 })
-export class AdminDashboardComponent {
+export class AdminDashboardComponent implements OnDestroy {
   assessments: AssessmentSummary[] = [];
   candidates: Candidate[] = [];
   candidateSearch = '';
@@ -48,7 +51,7 @@ export class AdminDashboardComponent {
   questionForm = this.fb.group({
     assessmentId: ['', Validators.required],
     text: ['', [Validators.required, Validators.maxLength(500)]],
-    type: ['MCQ' as QuestionType, Validators.required],
+    type: [QuestionTypeValues.Mcq as QuestionType, Validators.required],
     maxScore: [1, [Validators.required, Validators.min(1)]],
     correctAnswer: [''],
     isRequired: [true],
@@ -57,6 +60,8 @@ export class AdminDashboardComponent {
       this.createOptionGroup('Option B', true, 2)
     ])
   });
+
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -81,7 +86,7 @@ export class AdminDashboardComponent {
   }
 
   get isMcqQuestion(): boolean {
-    return this.questionForm.controls.type.value === 'MCQ';
+    return this.questionForm.controls.type.value === QuestionTypeValues.Mcq;
   }
 
   get filteredCandidates(): Candidate[] {
@@ -107,14 +112,14 @@ export class AdminDashboardComponent {
       description: formValue.description ?? undefined,
       durationMinutes: formValue.durationMinutes ?? 60,
       randomizeQuestions: formValue.randomizeQuestions ?? true
-    }).subscribe({
+    }).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
-        this.activityLog.unshift('Assessment created successfully.');
+        this.activityLog.unshift(AdminDashboardMessages.ActivityAssessmentCreated);
         this.assessmentForm.reset({ durationMinutes: 60, randomizeQuestions: true });
         this.loadDashboard();
       },
       error: err => {
-        this.error = err.error?.message ?? 'Unable to create assessment.';
+        this.error = err.error?.message ?? AdminDashboardMessages.UnableCreateAssessment;
       }
     });
   }
@@ -126,13 +131,12 @@ export class AdminDashboardComponent {
     if (!assessmentId) {
       return;
     }
-
-    this.assessmentApi.listQuestions(assessmentId).subscribe({
+    this.assessmentApi.listQuestions(assessmentId).pipe(takeUntil(this.destroy$)).subscribe({
       next: questions => {
         this.selectedQuestions = questions;
       },
       error: err => {
-        this.error = err.error?.message ?? 'Unable to load questions.';
+        this.error = err.error?.message ?? AdminDashboardMessages.UnableLoadQuestions;
       }
     });
   }
@@ -157,8 +161,8 @@ export class AdminDashboardComponent {
     }
 
     const formValue = this.questionForm.getRawValue();
-    const type = formValue.type ?? 'MCQ';
-    const options = type === 'MCQ'
+    const type = formValue.type ?? QuestionTypeValues.Mcq;
+    const options = type === QuestionTypeValues.Mcq
       ? formValue.options.map((option, index) => ({
           text: option.text ?? '',
           isCorrect: option.isCorrect ?? false,
@@ -166,8 +170,8 @@ export class AdminDashboardComponent {
         }))
       : [];
 
-    if (type === 'MCQ' && !options.some(option => option.isCorrect)) {
-      this.error = 'Mark one option as correct.';
+    if (type === QuestionTypeValues.Mcq && !options.some(option => option.isCorrect)) {
+      this.error = AdminDashboardMessages.MarkCorrectOption;
       return;
     }
 
@@ -179,15 +183,15 @@ export class AdminDashboardComponent {
       isRequired: formValue.isRequired ?? true,
       order: this.selectedQuestions.length + 1,
       options
-    }).subscribe({
+    }).pipe(takeUntil(this.destroy$)).subscribe({
       next: question => {
-        this.activityLog.unshift('Question added successfully.');
+        this.activityLog.unshift(AdminDashboardMessages.ActivityQuestionAdded);
         this.selectedQuestions = [...this.selectedQuestions, question];
         this.resetQuestionFields(formValue.assessmentId ?? '');
         this.loadDashboard();
       },
       error: err => {
-        this.error = err.error?.message ?? 'Unable to add question.';
+        this.error = err.error?.message ?? AdminDashboardMessages.UnableAddQuestion;
       }
     });
   }
@@ -202,22 +206,22 @@ export class AdminDashboardComponent {
     this.candidateApi.createCandidate({
       name: formValue.name ?? '',
       email: formValue.email ?? ''
-    }).subscribe({
+    }).pipe(takeUntil(this.destroy$)).subscribe({
       next: candidate => {
         this.candidates = [candidate, ...this.candidates];
         this.assignmentForm.patchValue({ candidateId: candidate.id });
-        this.activityLog.unshift('Candidate created and selected.');
+        this.activityLog.unshift(AdminDashboardMessages.CandidateCreatedSelected);
         this.candidateForm.reset();
       },
       error: err => {
-        this.error = err.error?.message ?? 'Unable to create candidate.';
+        this.error = err.error?.message ?? AdminDashboardMessages.UnableCreateCandidate;
       }
     });
   }
 
   selectCandidate(candidate: Candidate): void {
     this.assignmentForm.patchValue({ candidateId: candidate.id });
-    this.activityLog.unshift(`Selected candidate: ${candidate.name}.`);
+    this.activityLog.unshift(AdminDashboardMessages.CandidateSelected(candidate.name));
   }
 
   assignAssessment(): void {
@@ -231,13 +235,13 @@ export class AdminDashboardComponent {
       candidateId: payload.candidateId ?? '',
       assessmentId: payload.assessmentId ?? '',
       scheduledAtUtc: payload.scheduledAtUtc || undefined
-    }).subscribe({
+    }).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
-        this.activityLog.unshift('Assessment assigned to candidate.');
+        this.activityLog.unshift(AdminDashboardMessages.ActivityAssessmentAssigned);
         this.assignmentForm.reset();
       },
       error: err => {
-        this.error = err.error?.message ?? 'Unable to assign assessment.';
+        this.error = err.error?.message ?? AdminDashboardMessages.UnableAssignAssessment;
       }
     });
   }
@@ -252,7 +256,7 @@ export class AdminDashboardComponent {
       progress: this.candidateApi.getLiveProgress(),
       results: this.resultApi.getResults(),
       analytics: this.resultApi.getAnalyticsOverview()
-    }).subscribe({
+    }).pipe(takeUntil(this.destroy$)).subscribe({
       next: ({ assessments, candidates, progress, results, analytics }) => {
         this.assessments = assessments;
         this.candidates = candidates;
@@ -261,7 +265,7 @@ export class AdminDashboardComponent {
         this.results = this.mapRecentResults(results, candidates, assessments).slice(0, 8);
       },
       error: err => {
-        this.error = err.error?.message ?? 'Unable to load dashboard.';
+        this.error = err.error?.message ?? AdminDashboardMessages.UnableLoadDashboard;
       },
       complete: () => {
         this.loading = false;
@@ -277,7 +281,7 @@ export class AdminDashboardComponent {
 
     this.signalR.startConnection(environment.signalRHubUrl, user.token).then(() => {
       this.signalR.send('JoinAdminMonitoringChannel');
-    });
+    }).catch(() => {});
 
     this.signalR.on<AssessmentProgress>('ProgressUpdated', progress => {
       const existing = this.liveProgress.findIndex(p => p.candidateAssessmentId === progress.candidateAssessmentId);
@@ -287,26 +291,36 @@ export class AdminDashboardComponent {
         this.liveProgress = [progress, ...this.liveProgress];
       }
 
-      this.activityLog.unshift(`Progress update: ${progress.candidateName} is ${progress.completionPercent}% complete.`);
+      this.activityLog.unshift(
+        AdminDashboardMessages.ActivityProgressUpdate(progress.candidateName, progress.completionPercent)
+      );
       this.activityLog = this.activityLog.slice(0, 20);
     });
 
     this.signalR.on<{ candidateName?: string; violationType?: string } | string>('SuspiciousActivityDetected', payload => {
       const message = typeof payload === 'string'
         ? payload
-        : `${payload.candidateName || 'Candidate'} triggered ${payload.violationType || 'an alert'}`;
-      this.activityLog.unshift(`Suspicious activity: ${message}`);
+        : AdminDashboardMessages.SuspiciousDetail(
+            payload.candidateName || AdminDashboardMessages.FallbackCandidate,
+            payload.violationType || AdminDashboardMessages.DefaultViolationLabel
+          );
+      this.activityLog.unshift(AdminDashboardMessages.ActivitySuspicious(message));
       this.activityLog = this.activityLog.slice(0, 20);
     });
 
-    this.candidateApi.listCandidates().subscribe({
+    this.candidateApi.listCandidates().pipe(takeUntil(this.destroy$)).subscribe({
       next: candidates => {
         this.candidates = candidates;
       },
       error: err => {
-        this.error = err.error?.message ?? 'Unable to load candidates.';
+        this.error = err.error?.message ?? AdminDashboardMessages.UnableLoadCandidates;
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private createOptionGroup(text: string, isCorrect: boolean, order: number) {
@@ -327,7 +341,7 @@ export class AdminDashboardComponent {
     this.questionForm.reset({
       assessmentId,
       text: '',
-      type: 'MCQ',
+        type: QuestionTypeValues.Mcq,
       maxScore: 1,
       correctAnswer: '',
       isRequired: true
@@ -350,18 +364,11 @@ export class AdminDashboardComponent {
       .sort((left, right) => new Date(right.completedAt).getTime() - new Date(left.completedAt).getTime())
       .map(result => ({
         id: result.id,
-        candidateName: candidateMap.get(result.candidateId)?.name || 'Candidate',
-        assessmentTitle: assessmentMap.get(result.assessmentId)?.title || 'Assessment',
+        candidateName: candidateMap.get(result.candidateId)?.name || AdminDashboardMessages.FallbackCandidate,
+        assessmentTitle: assessmentMap.get(result.assessmentId)?.title || AdminDashboardMessages.FallbackAssessment,
         score: result.score,
         maxScore: result.maxScore
       }));
   }
 }
 
-interface RecentResultView {
-  id: string;
-  candidateName: string;
-  assessmentTitle: string;
-  score: number;
-  maxScore: number;
-}

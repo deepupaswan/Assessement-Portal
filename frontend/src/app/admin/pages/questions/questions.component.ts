@@ -3,22 +3,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AssessmentApiService } from '../../../core/services/assessment-api.service';
-import { AssessmentDetail, AssessmentQuestion, QuestionType } from '../../../core/models/assessment.models';
-
-interface QuestionRow extends AssessmentQuestion {
-  isDeleting?: boolean;
-  isEditing?: boolean;
-}
-
-interface QuestionForm {
-  text?: string;
-  type?: QuestionType;
-  marks?: number;
-  options?: Array<{ text: string; isCorrect?: boolean }>;
-  correctAnswer?: string;
-  codeTemplate?: string;
-  expectedOutput?: string;
-}
+import { AssessmentDetail } from '../../../core/models/assessment.models';
+import { QuestionType, QuestionTypeValues, QuestionTypeLabels } from '../../../constants/assessment.constants';
+import { QuestionForm, QuestionRow } from './questions.models';
+import { QuestionsMessages } from '../../../constants/questions.constants';
 
 @Component({
   selector: 'app-questions',
@@ -35,7 +23,7 @@ export class QuestionsComponent implements OnInit, OnDestroy {
   // Form state
   showForm = false;
   editingQuestion: QuestionRow | null = null;
-  formData: QuestionForm = { type: 'MCQ', marks: 1, options: [] };
+  formData: QuestionForm = { type: QuestionTypeValues.Mcq, marks: 1, options: [] };
 
   // Filters
   filterType: QuestionType | 'all' = 'all';
@@ -74,7 +62,7 @@ export class QuestionsComponent implements OnInit, OnDestroy {
           this.questions = (assessment.questions || []).map(q => ({ ...q, isDeleting: false }));
         },
         error: (err: any) => {
-          this.error = err.error?.message ?? 'Failed to load assessment';
+          this.error = err.error?.message ?? QuestionsMessages.LoadError;
           console.error('Load error:', err);
         },
         complete: () => {
@@ -92,7 +80,7 @@ export class QuestionsComponent implements OnInit, OnDestroy {
 
   openCreateForm(): void {
     this.editingQuestion = null;
-    this.formData = { type: 'MCQ', marks: 1, options: [] };
+    this.formData = { type: QuestionTypeValues.Mcq, marks: 1, options: [] };
     this.showForm = true;
   }
 
@@ -110,12 +98,12 @@ export class QuestionsComponent implements OnInit, OnDestroy {
   cancelForm(): void {
     this.showForm = false;
     this.editingQuestion = null;
-    this.formData = { type: 'MCQ', marks: 1, options: [] };
+    this.formData = { type: QuestionTypeValues.Mcq, marks: 1, options: [] };
   }
 
   saveQuestion(): void {
     if (!this.formData.text || !this.formData.type) {
-      alert('Please fill in all required fields');
+      alert(QuestionsMessages.FillAllFields);
       return;
     }
 
@@ -125,7 +113,7 @@ export class QuestionsComponent implements OnInit, OnDestroy {
   }
 
   deleteQuestion(question: QuestionRow): void {
-    if (!confirm('Delete this question?')) {
+    if (!confirm(QuestionsMessages.DeleteQuestion)) {
       return;
     }
 
@@ -148,12 +136,8 @@ export class QuestionsComponent implements OnInit, OnDestroy {
   }
 
   getQuestionTypeLabel(type?: QuestionType): string {
-    if (!type) return 'Unknown';
-    return {
-      'MCQ': 'Multiple Choice',
-      'DESCRIPTIVE': 'Descriptive',
-      'CODING': 'Coding'
-    }[type] || type;
+    if (!type) return QuestionsMessages.UnknownType;
+    return QuestionTypeLabels[type] || type;
   }
 
   goBack(): void {

@@ -2,13 +2,13 @@
   <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
     <div>
       <h2 class="mb-1">{{ s.assessmentTitle }}</h2>
-      <p class="text-secondary mb-0">Keep fullscreen mode enabled. Answers auto-save every few seconds.</p>
+      <p class="text-secondary mb-0">{{ ui.FullscreenHint }}</p>
     </div>
 
     <div class="timer-card text-center">
-      <small class="text-uppercase">Time Left</small>
+      <small class="text-uppercase">{{ ui.TimeLeft }}</small>
       <div class="display-6 fw-bold">{{ formatTime(remainingSeconds) }}</div>
-      <button class="btn btn-sm btn-outline-light" type="button" (click)="enterFullscreen()">Enter Fullscreen</button>
+      <button class="btn btn-sm btn-outline-light" type="button" (click)="enterFullscreen()">{{ ui.EnterFullscreen }}</button>
     </div>
   </div>
 
@@ -18,8 +18,8 @@
   <form (ngSubmit)="submitAssessment()">
     <div class="card border-0 shadow-sm mb-3" *ngFor="let question of s.questions; trackBy: trackByQuestionId; let i = index">
       <div class="card-body">
-        <h5 class="card-title">Q{{ i + 1 }}. {{ question.prompt }}</h5>
-        <div class="text-secondary small mb-3">Type: {{ question.questionType }} | Marks: {{ question.marks }}</div>
+        <h5 class="card-title">{{ ui.QuestionPrefix }}{{ i + 1 }}. {{ question.prompt }}</h5>
+        <div class="text-secondary small mb-3">{{ ui.TypeMarksPrefix }} {{ question.questionType }} | {{ ui.MarksLabel }}: {{ question.marks }}</div>
 
         <div *ngIf="question.questionType === 'MCQ'">
           <div class="form-check mb-2" *ngFor="let option of question.options">
@@ -40,7 +40,7 @@
             rows="5"
             [value]="getAnswer(question.id)?.descriptiveAnswer ?? ''"
             (input)="saveTextAnswer(question.id, $any($event.target).value, 'descriptiveAnswer')"
-            placeholder="Write your answer here"></textarea>
+            [attr.placeholder]="ui.DescriptivePlaceholder"></textarea>
         </div>
 
         <div *ngIf="question.questionType === 'CODING'">
@@ -49,17 +49,17 @@
             rows="10"
             [value]="getAnswer(question.id)?.codingAnswer ?? ''"
             (input)="saveTextAnswer(question.id, $any($event.target).value, 'codingAnswer')"
-            placeholder="Write your code here"></textarea>
+            [attr.placeholder]="ui.CodingPlaceholder"></textarea>
         </div>
       </div>
     </div>
 
     <div class="d-flex justify-content-end mb-4">
       <button class="btn btn-lg btn-primary" [disabled]="submitting" type="submit">
-        {{ submitting ? 'Submitting...' : 'Submit Assessment' }}
+        {{ submitting ? ui.Submitting : ui.SubmitAssessment }}
       </button>
     </div>
   </form>
 </section>
 
-<div *ngIf="loading" class="text-secondary">Loading assessment session...</div>
+<div *ngIf="loading" class="text-secondary">{{ ui.LoadingSession }}</div>

@@ -5,10 +5,14 @@ import { takeUntil } from 'rxjs/operators';
 import { AssessmentApiService } from '../../../core/services/assessment-api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { AssessmentSummary } from '../../../core/models/assessment.models';
-
-interface AssessmentRow extends AssessmentSummary {
-  isDeleting?: boolean;
-}
+import { AssessmentRow } from './assessments.models';
+import {
+  AssessmentFilterType,
+  AssessmentFilterTypeValues,
+  AssessmentStatusLabels,
+  AssessmentMessages,
+  AssessmentRoutes
+} from '../../../constants/assessments.constants';
 
 @Component({
   selector: 'app-assessments',
@@ -20,7 +24,7 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
   searchTerm = '';
-  filterType: 'all' | 'active' | 'inactive' = 'all';
+  filterType: AssessmentFilterType = AssessmentFilterTypeValues.All;
   sortBy: 'title' | 'date' | 'questions' = 'date';
   sortDesc = true;
 
@@ -52,7 +56,7 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
           this.assessments = assessments.map(a => ({ ...a, isDeleting: false }));
         },
         error: (err: any) => {
-          this.error = err.error?.message ?? 'Failed to load assessments';
+          this.error = err.error?.message ?? AssessmentMessages.LoadError;
           console.error('Assessment load error:', err);
         },
         complete: () => {
@@ -68,9 +72,9 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
         a.description?.toLowerCase().includes(this.searchTerm.toLowerCase());
       
       const isActive = a.isActive !== undefined ? a.isActive : a.isPublished;
-      const matchesFilter = this.filterType === 'all' || 
-        (this.filterType === 'active' && isActive) ||
-        (this.filterType === 'inactive' && !isActive);
+      const matchesFilter = this.filterType === AssessmentFilterTypeValues.All || 
+        (this.filterType === AssessmentFilterTypeValues.Active && isActive) ||
+        (this.filterType === AssessmentFilterTypeValues.Inactive && !isActive);
       
       return matchesSearch && matchesFilter;
     });
@@ -96,15 +100,15 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
   }
 
   createAssessment(): void {
-    this.router.navigate(['/admin/assessments/create']);
+    this.router.navigate([AssessmentRoutes.Create]);
   }
 
   editAssessment(id: string): void {
-    this.router.navigate(['/admin/assessments/edit', id]);
+    this.router.navigate([AssessmentRoutes.Edit(id)]);
   }
 
   deleteAssessment(assessment: AssessmentRow): void {
-    if (!confirm(`Delete assessment "${assessment.title}"? This action cannot be undone.`)) {
+    if (!confirm(AssessmentMessages.DeleteConfirm(assessment.title))) {
       return;
     }
 
@@ -118,14 +122,14 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
         },
         error: (err: any) => {
           assessment.isDeleting = false;
-          this.error = err.error?.message ?? 'Failed to delete assessment';
+          this.error = err.error?.message ?? AssessmentMessages.DeleteError;
           console.error('Delete error:', err);
         }
       });
   }
 
   cloneAssessment(assessment: AssessmentRow): void {
-    if (!confirm(`Clone assessment "${assessment.title}"?`)) {
+    if (!confirm(AssessmentMessages.CloneConfirm(assessment.title))) {
       return;
     }
 
@@ -136,14 +140,14 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
           this.assessments.unshift({ ...cloned, isDeleting: false });
         },
         error: (err: any) => {
-          this.error = err.error?.message ?? 'Failed to clone assessment';
+          this.error = err.error?.message ?? AssessmentMessages.CloneError;
           console.error('Clone error:', err);
         }
       });
   }
 
   viewDetails(id: string): void {
-    this.router.navigate(['/admin/assessments', id, 'questions']);
+    this.router.navigate([AssessmentRoutes.Details(id)]);
   }
 
   changeSortBy(field: 'title' | 'date' | 'questions'): void {
@@ -170,6 +174,6 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
   }
 
   getStatusText(isActive: boolean | undefined): string {
-    return isActive ? 'Active' : 'Inactive';
+    return isActive ? AssessmentStatusLabels.Active : AssessmentStatusLabels.Inactive;
   }
 }

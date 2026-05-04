@@ -7,11 +7,15 @@ export type RealtimeConnectionState = 'disconnected' | 'connecting' | 'connected
 @Injectable({ providedIn: 'root' })
 export class SignalRService {
   private hubConnection: signalR.HubConnection | null = null;
-  public connectionState$ = new BehaviorSubject<RealtimeConnectionState>('disconnected');
+  // Encapsulated subject: keep writable subject private and expose Observable publicly
+  private readonly _connectionState = new BehaviorSubject<RealtimeConnectionState>('disconnected');
+  public readonly connectionState$ = this._connectionState.asObservable();
+  // Guard to avoid concurrent start attempts
+  private starting = false;
 
   async startConnection(hubUrl: string, token: string): Promise<void> {
     if (this.hubConnection && this.hubConnection.state === signalR.HubConnectionState.Connected) {
-      this.connectionState$.next('connected');
+      this._connectionState.next('connected');
       return;
     }
 
@@ -20,23 +24,33 @@ export class SignalRService {
       .withAutomaticReconnect()
       .build();
 
-    this.hubConnection.onclose(() => this.connectionState$.next('disconnected'));
-    this.hubConnection.onreconnecting(() => this.connectionState$.next('reconnecting'));
-    this.hubConnection.onreconnected(() => this.connectionState$.next('connected'));
+    this.hubConnection.onclose(() => this._connectionState.next('disconnected'));
+    this.hubConnection.onreconnecting(() => this._connectionState.next('reconnecting'));
+    this.hubConnection.onreconnected(() => this._connectionState.next('connected'));
 
-    this.connectionState$.next('connecting');
+    // Avoid concurrent starts
+    if (this.starting) {
+      return;
+    }
+
+    this._connectionState.next('connecting');
+    this.starting = true;
 
     try {
       await this.hubConnection.start();
-      this.connectionState$.next('connected');
-    } catch {
-      this.connectionState$.next('error');
+      this._connectionState.next('connected');
+    } catch (err) {
+      // surface error for diagnostics
+      console.warn('SignalR startConnection failed', err);
+      this._connectionState.next('error');
+    } finally {
+      this.starting = false;
     }
   }
 
   async stopConnection(): Promise<void> {
     await this.hubConnection?.stop();
-    this.connectionState$.next('disconnected');
+    this._connectionState.next('disconnected');
   }
 
   on<T>(event: string, callback: (data: T) => void): void {

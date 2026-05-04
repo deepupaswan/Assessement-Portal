@@ -5,25 +5,9 @@ import { Assessment } from '../../../core/models/assessment.models';
 import { Candidate, CandidateAssignment } from '../../../core/models/candidate.models';
 import { AssessmentApiService } from '../../../core/services/assessment-api.service';
 import { CandidateApiService } from '../../../core/services/candidate-api.service';
-
-interface AssignmentRow {
-  id: string;
-  candidateId: string;
-  candidateName: string;
-  assessmentId: string;
-  assessmentTitle: string;
-  status: string;
-  scheduledAt?: string;
-  createdAt?: string;
-  startedAt?: string;
-  submittedAt?: string;
-}
-
-interface AssignmentForm {
-  candidateId: string;
-  assessmentId: string;
-  scheduledAtUtc?: string;
-}
+import { AssignmentForm, AssignmentRow } from './assignments.models';
+import { AssignmentFilterStatus, AssignmentFilterStatusValues } from '../../../constants/assignment-filters.constants';
+import { AssignmentsMessages } from '../../../constants/assignments.constants';
 
 @Component({
   selector: 'app-assignments',
@@ -41,7 +25,7 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
   deletingAssignmentId: string | null = null;
   error: string | null = null;
   searchTerm = '';
-  filterStatus: 'all' | 'scheduled' | 'assigned' | 'inprogress' | 'submitted' = 'all';
+  filterStatus: AssignmentFilterStatus = AssignmentFilterStatusValues.All;
   sortBy: 'candidate' | 'assessment' | 'date' = 'date';
   sortDesc = true;
 
@@ -52,6 +36,9 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
   showBulkForm = false;
   bulkData: AssignmentForm = { candidateId: '', assessmentId: '', scheduledAtUtc: undefined };
   selectedCandidatesForBulk = new Set<string>();
+
+  // Expose constants to template
+  readonly filterStatusValues = AssignmentFilterStatusValues;
 
   minDateTime: string;
   private readonly destroy$ = new Subject<void>();
@@ -93,7 +80,7 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
           this.assignments = data.map((assignment) => this.mapAssignment(assignment));
         },
         error: (err: any) => {
-          this.error = err.error?.message ?? 'Failed to load assignments';
+          this.error = err.error?.message ?? AssignmentsMessages.LoadError;
           console.error(err);
         }
       });
@@ -107,7 +94,7 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
         next: (data: Candidate[]) => {
           this.candidates = data;
         },
-        error: (err: any) => console.error('Failed to load candidates', err)
+        error: (err: any) => console.error(AssignmentsMessages.LoadCandidatesError, err)
       });
   }
 
@@ -119,7 +106,7 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
         next: (data: Assessment[]) => {
           this.assessments = data.filter((assessment) => assessment.isActive);
         },
-        error: (err: any) => console.error('Failed to load assessments', err)
+        error: (err: any) => console.error(AssignmentsMessages.LoadAssessmentsError, err)
       });
   }
 
@@ -135,7 +122,7 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
       );
     }
 
-    if (this.filterStatus !== 'all') {
+    if (this.filterStatus !== AssignmentFilterStatusValues.All) {
       result = result.filter(
         (assignment) => assignment.status.toLowerCase() === this.filterStatus
       );
@@ -199,7 +186,7 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
 
   saveAssignment(): void {
     if (!this.formData.candidateId || !this.formData.assessmentId) {
-      this.error = 'Candidate and assessment are required';
+      this.error = AssignmentsMessages.RequiredFields;
       return;
     }
 
@@ -227,8 +214,8 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
           this.error =
             err.error?.message ??
             (this.editingAssignment
-              ? 'Failed to update assignment'
-              : 'Failed to create assignment');
+              ? AssignmentsMessages.UpdateError
+              : AssignmentsMessages.CreateError);
           console.error(err);
         }
       });
@@ -239,7 +226,7 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this assignment?')) {
+    if (!confirm(AssignmentsMessages.DeleteConfirm)) {
       return;
     }
 
@@ -259,7 +246,7 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
           this.assignments = this.assignments.filter((item) => item.id !== assignment.id);
         },
         error: (err: any) => {
-          this.error = err.error?.message ?? 'Failed to delete assignment';
+          this.error = err.error?.message ?? AssignmentsMessages.DeleteError;
           console.error(err);
         }
       });
@@ -304,12 +291,12 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
 
   bulkAssign(): void {
     if (!this.bulkData.assessmentId) {
-      this.error = 'Assessment is required';
+      this.error = AssignmentsMessages.RequiredAssessment;
       return;
     }
 
     if (this.selectedCandidatesForBulk.size === 0) {
-      this.error = 'Select at least one candidate';
+      this.error = AssignmentsMessages.RequiredCandidates;
       return;
     }
 
@@ -341,7 +328,7 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
           this.closeBulkForm();
         },
         error: (err: any) => {
-          this.error = err.error?.message ?? 'Failed to bulk assign assessments';
+          this.error = err.error?.message ?? AssignmentsMessages.BulkAssignError;
           console.error(err);
         }
       });
@@ -370,8 +357,9 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
   private mapAssignment(assignment: CandidateAssignment): AssignmentRow {
     return {
       id: assignment.candidateAssessmentId,
+      candidateAssessmentId: assignment.candidateAssessmentId,
       candidateId: assignment.candidateId ?? '',
-      candidateName: assignment.candidateName ?? 'Candidate',
+      candidateName: assignment.candidateName ?? AssignmentsMessages.FallbackCandidateName,
       assessmentId: assignment.assessmentId,
       assessmentTitle: assignment.assessmentTitle,
       status: assignment.status,

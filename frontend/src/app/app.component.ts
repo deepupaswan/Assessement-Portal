@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { AuthService, AuthUser } from './core/services/auth.service';
+import { AppRouteUrls } from './constants/app.constants';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,6 @@ export class AppComponent {
 
   logout(): void {
     this.authService.logout();
-    this.router.navigate(['/auth/login']);
+    this.router.navigate([AppRouteUrls.authLogin]);
   }
 }

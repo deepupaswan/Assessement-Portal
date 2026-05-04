@@ -10,15 +10,12 @@ import { SignalRService } from '../../../core/services/signalr.service';
 import { environment } from '../../../../environments/environment';
 import { AnalyticsOverview } from '../../../core/models/result.models';
 import { AssessmentProgress } from '../../../core/models/candidate.models';
-
-interface ActivityItem {
-  id: string;
-  icon: string;
-  title: string;
-  description: string;
-  timestamp: Date;
-  type: 'assessment' | 'candidate' | 'assignment' | 'result';
-}
+import { ActivityItem } from './dashboard.models';
+import {
+  AdminHomeDashboardActivity,
+  AdminHomeDashboardMessages,
+  AdminHomeRelativeTime
+} from '../../../constants/dashboard.constants';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -88,14 +85,17 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
           this.addActivity({
             id: `analytics-${Date.now()}`,
             icon: 'icon-bar-chart-2',
-            title: 'Dashboard loaded',
-            description: `${analytics.totalCandidates} candidates, ${analytics.completionRate.toFixed(1)}% completion`,
+            title: AdminHomeDashboardActivity.DashboardLoaded,
+            description: AdminHomeDashboardActivity.DashboardLoadedDescription(
+              analytics.totalCandidates,
+              analytics.completionRate
+            ),
             timestamp: new Date(),
             type: 'assessment'
           });
         },
         error: err => {
-          this.error = err.error?.message ?? 'Failed to load analytics';
+          this.error = err.error?.message ?? AdminHomeDashboardMessages.LoadError;
           console.error('Analytics load error:', err);
         },
         complete: () => {
@@ -121,8 +121,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       this.addActivity({
         id: `progress-${progress.candidateAssessmentId}`,
         icon: 'icon-activity',
-        title: 'Candidate progress update',
-        description: `${progress.candidateName} is ${progress.completionPercent}% complete`,
+        title: AdminHomeDashboardActivity.ProgressTitle,
+        description: AdminHomeDashboardActivity.ProgressDescription(
+          progress.candidateName,
+          progress.completionPercent
+        ),
         timestamp: new Date(),
         type: 'assessment'
       });
@@ -132,11 +135,14 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.signalR.on<{ candidateName?: string; violationType?: string } | string>('SuspiciousActivityDetected', payload => {
       const description = typeof payload === 'string'
         ? payload
-        : `${payload.candidateName || 'Candidate'} triggered ${payload.violationType || 'an alert'}`;
+        : AdminHomeDashboardActivity.SuspiciousDescription(
+            payload.candidateName || AdminHomeDashboardActivity.FallbackCandidate,
+            payload.violationType || AdminHomeDashboardActivity.DefaultViolationLabel
+          );
       this.addActivity({
         id: `suspicious-${Date.now()}`,
         icon: 'icon-alert-circle',
-        title: 'Suspicious activity detected',
+        title: AdminHomeDashboardActivity.SuspiciousTitle,
         description,
         timestamp: new Date(),
         type: 'result'
@@ -148,7 +154,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       this.addActivity({
         id: `candidate-${Date.now()}`,
         icon: 'icon-user-plus',
-        title: 'New candidate registered',
+        title: AdminHomeDashboardActivity.NewCandidateTitle,
         description: `${candidate.name}`,
         timestamp: new Date(),
         type: 'candidate'
@@ -160,8 +166,11 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
       this.addActivity({
         id: `assignment-${Date.now()}`,
         icon: 'icon-send',
-        title: 'Assessment assigned',
-        description: `${event.assessmentTitle} → ${event.candidateName}`,
+        title: AdminHomeDashboardActivity.AssessmentAssignedTitle,
+        description: AdminHomeDashboardActivity.AssessmentAssignedDescription(
+          event.assessmentTitle,
+          event.candidateName
+        ),
         timestamp: new Date(),
         type: 'assignment'
       });
@@ -189,10 +198,19 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffMins < 1) return AdminHomeRelativeTime.JustNow;
+    if (diffMins < 60) {
+      const label = diffMins > 1 ? AdminHomeRelativeTime.Minutes : AdminHomeRelativeTime.Minute;
+      return `${diffMins} ${label} ${AdminHomeRelativeTime.Ago}`;
+    }
+    if (diffHours < 24) {
+      const label = diffHours > 1 ? AdminHomeRelativeTime.Hours : AdminHomeRelativeTime.Hour;
+      return `${diffHours} ${label} ${AdminHomeRelativeTime.Ago}`;
+    }
+    if (diffDays < 7) {
+      const label = diffDays > 1 ? AdminHomeRelativeTime.Days : AdminHomeRelativeTime.Day;
+      return `${diffDays} ${label} ${AdminHomeRelativeTime.Ago}`;
+    }
     return new Date(date).toLocaleDateString();
   }
 }

@@ -171,35 +171,35 @@
         </div>
 
         <div class="filter-tabs">
-          <button class="filter-tab" type="button" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">
+          <button class="filter-tab" type="button" [class.active]="filterStatus === filterStatusValues.All" (click)="filterStatus = filterStatusValues.All">
             All
           </button>
           <button
             class="filter-tab"
             type="button"
-            [class.active]="filterStatus === 'scheduled'"
-            (click)="filterStatus = 'scheduled'">
+            [class.active]="filterStatus === filterStatusValues.Scheduled"
+            (click)="filterStatus = filterStatusValues.Scheduled">
             Scheduled
           </button>
           <button
             class="filter-tab"
             type="button"
-            [class.active]="filterStatus === 'assigned'"
-            (click)="filterStatus = 'assigned'">
+            [class.active]="filterStatus === filterStatusValues.Assigned"
+            (click)="filterStatus = filterStatusValues.Assigned">
             Assigned
           </button>
           <button
             class="filter-tab"
             type="button"
-            [class.active]="filterStatus === 'inprogress'"
-            (click)="filterStatus = 'inprogress'">
+            [class.active]="filterStatus === filterStatusValues.InProgress"
+            (click)="filterStatus = filterStatusValues.InProgress">
             In Progress
           </button>
           <button
             class="filter-tab"
             type="button"
-            [class.active]="filterStatus === 'submitted'"
-            (click)="filterStatus = 'submitted'">
+            [class.active]="filterStatus === filterStatusValues.Submitted"
+            (click)="filterStatus = filterStatusValues.Submitted">
             Submitted
           </button>
         </div>

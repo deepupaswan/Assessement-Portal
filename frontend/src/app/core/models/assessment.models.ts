@@ -1,4 +1,7 @@
-export type QuestionType = 'MCQ' | 'DESCRIPTIVE' | 'CODING';
+// Re-export constants from centralized location
+import type { QuestionType } from '../../constants/assessment.constants';
+export type { QuestionType } from '../../constants/assessment.constants';
+export { QuestionTypeValues, QuestionTypeLabels } from '../../constants/assessment.constants';
 
 export interface AssessmentSummary {
   id: string;

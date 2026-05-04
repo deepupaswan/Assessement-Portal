@@ -6,6 +6,15 @@ import { CandidateAssessmentSession } from '../core/models/candidate.models';
 import { AnswerApiService } from '../core/services/answer-api.service';
 import { CandidateApiService } from '../core/services/candidate-api.service';
 import { SignalRService } from '../core/services/signalr.service';
+import {
+  CandidateAssessmentSignalREvents,
+  CandidateAssessmentSignalRCommands,
+  CandidateAssessmentViolationTypes,
+  CandidateAssessmentMessages,
+  CandidateAssessmentViolationMetadata,
+  CandidateAssessmentUi,
+  formatViolationWarning
+} from '../constants/candidate-assessment.constants';
 import { AuthService } from '../core/services/auth.service';
 import { environment } from '../../environments/environment';
 
@@ -15,6 +24,8 @@ import { environment } from '../../environments/environment';
   styleUrls: ['./candidate-assessment.component.scss']
 })
 export class CandidateAssessmentComponent implements OnInit, OnDestroy {
+  readonly ui = CandidateAssessmentUi;
+
   session: CandidateAssessmentSession | null = null;
   answerMap = new Map<string, AnswerSaveRequest>();
   loading = false;
@@ -38,7 +49,7 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const candidateAssessmentId = this.route.snapshot.paramMap.get('candidateAssessmentId');
     if (!candidateAssessmentId) {
-      this.error = 'Assessment session id is missing.';
+      this.error = CandidateAssessmentMessages.SessionIdMissing;
       return;
     }
 
@@ -54,8 +65,8 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
 
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
     document.removeEventListener('fullscreenchange', this.onFullscreenChange);
-    this.signalR.off('TimerUpdated');
-    this.signalR.off('WarningIssued');
+    this.signalR.off(CandidateAssessmentSignalREvents.TimerUpdated);
+    this.signalR.off(CandidateAssessmentSignalREvents.WarningIssued);
   }
 
   trackByQuestionId(index: number, question: { id: string }): string {
@@ -88,7 +99,7 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
   enterFullscreen(): void {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {
-        this.warningMessage = 'Fullscreen request was blocked by the browser.';
+        this.warningMessage = CandidateAssessmentMessages.FullscreenBlocked;
       });
     }
   }
@@ -100,9 +111,9 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
 
     this.submitting = true;
 
-    this.flushAnswers().subscribe({
+    this.flushAnswers().pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
-        this.candidateApi.submitAssessment(this.session!.candidateAssessmentId).subscribe({
+        this.candidateApi.submitAssessment(this.session!.candidateAssessmentId).pipe(takeUntil(this.destroy$)).subscribe({
           next: result => {
             this.sendProgress(100);
             this.router.navigate(
@@ -111,15 +122,15 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
             );
           },
           error: err => {
-            this.error = err.error?.message ?? 'Submission failed.';
+            this.error = err.error?.message ?? CandidateAssessmentMessages.SubmissionFailed;
             this.submitting = false;
           }
         });
       },
       error: () => {
         this.error = autoSubmitted
-          ? 'Auto-submit triggered, but answer sync failed. Please reconnect and retry.'
-          : 'Unable to save answers before submission.';
+          ? CandidateAssessmentMessages.AutoSubmitWithSyncFailed
+          : CandidateAssessmentMessages.UnableToSaveBeforeSubmission;
         this.submitting = false;
       }
     });
@@ -132,19 +143,19 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
   private loadSession(candidateAssessmentId: string): void {
     this.loading = true;
 
-    this.candidateApi.getAssessmentSession(candidateAssessmentId).subscribe({
+    this.candidateApi.getAssessmentSession(candidateAssessmentId).pipe(takeUntil(this.destroy$)).subscribe({
       next: session => {
         this.session = session;
         this.remainingSeconds = session.remainingSeconds;
         this.connectRealtime(session.candidateAssessmentId);
 
-        this.candidateApi.startAssessment(session.candidateAssessmentId).subscribe();
+        this.candidateApi.startAssessment(session.candidateAssessmentId).pipe(takeUntil(this.destroy$)).subscribe();
 
         this.startTimer();
         this.startAutoSave();
       },
       error: err => {
-        this.error = err.error?.message ?? 'Unable to load assessment session.';
+        this.error = err.error?.message ?? CandidateAssessmentMessages.LoadSessionFailed;
       },
       complete: () => {
         this.loading = false;
@@ -159,14 +170,18 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
     }
 
     this.signalR.startConnection(environment.signalRHubUrl, user.token).then(() => {
-      this.signalR.send('JoinAssessmentChannel', candidateAssessmentId, user.name);
-    });
+      this.signalR.send(
+        CandidateAssessmentSignalRCommands.JoinAssessmentChannel,
+        candidateAssessmentId,
+        user.name
+      );
+    }).catch(() => {});
 
-    this.signalR.on<number>('TimerUpdated', remainingSeconds => {
+    this.signalR.on<number>(CandidateAssessmentSignalREvents.TimerUpdated, remainingSeconds => {
       this.remainingSeconds = remainingSeconds;
     });
 
-    this.signalR.on<string>('WarningIssued', warning => {
+    this.signalR.on<string>(CandidateAssessmentSignalREvents.WarningIssued, warning => {
       this.warningMessage = warning;
     });
   }
@@ -190,9 +205,9 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         if (!this.submitting && this.answerMap.size > 0) {
-          this.flushAnswers().subscribe({
+          this.flushAnswers().pipe(takeUntil(this.destroy$)).subscribe({
             error: () => {
-              this.warningMessage = 'Auto-save retry pending. Your local answers are preserved.';
+              this.warningMessage = CandidateAssessmentMessages.AutoSaveRetryPending;
             }
           });
         }
@@ -227,18 +242,29 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.signalR.send('UpdateProgress', this.session.candidateAssessmentId, progress, user.name);
+    this.signalR.send(
+      CandidateAssessmentSignalRCommands.UpdateProgress,
+      this.session.candidateAssessmentId,
+      progress,
+      user.name
+    );
   }
 
   private readonly onVisibilityChange = (): void => {
     if (document.hidden && this.session) {
-      this.raiseViolation('TAB_SWITCH', 'Candidate switched tabs or minimized browser.');
+      this.raiseViolation(
+        CandidateAssessmentViolationTypes.TabSwitch,
+        CandidateAssessmentViolationMetadata.TabSwitch
+      );
     }
   };
 
   private readonly onFullscreenChange = (): void => {
     if (!document.fullscreenElement && this.session) {
-      this.raiseViolation('FULLSCREEN_EXIT', 'Candidate exited fullscreen mode.');
+      this.raiseViolation(
+        CandidateAssessmentViolationTypes.FullscreenExit,
+        CandidateAssessmentViolationMetadata.FullscreenExit
+      );
     }
   };
 
@@ -249,16 +275,21 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
     }
 
     this.violationCount += 1;
-    this.warningMessage = `Warning ${this.violationCount}: ${type.replace('_', ' ').toLowerCase()}`;
+    this.warningMessage = formatViolationWarning(this.violationCount, type);
 
     this.candidateApi.reportSuspiciousActivity({
-      candidateAssessmentId: this.session.candidateAssessmentId,
+      candidateAssessmentId: this.session!.candidateAssessmentId,
       violationType: type,
       metadata
-    }).subscribe();
+    }).pipe(takeUntil(this.destroy$)).subscribe();
 
     if (this.signalR.isConnected() && user) {
-      this.signalR.send('ReportSuspiciousActivity', this.session.candidateAssessmentId, user.name, type);
+      this.signalR.send(
+        CandidateAssessmentSignalRCommands.ReportSuspiciousActivity,
+        this.session.candidateAssessmentId,
+        user.name,
+        type
+      );
     }
 
     const maxViolations = this.session.allowedViolations || environment.maxViolations;

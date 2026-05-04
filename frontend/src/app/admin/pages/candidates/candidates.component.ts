@@ -6,28 +6,14 @@ import { Candidate } from '../../../core/models/candidate.models';
 import { Assessment } from '../../../core/models/assessment.models';
 import { CandidateApiService } from '../../../core/services/candidate-api.service';
 import { AssessmentApiService } from '../../../core/services/assessment-api.service';
-
-interface CandidateRow {
-  id: string;
-  name: string;
-  email: string;
-  createdAt?: string;
-  updatedAt?: string;
-  status?: string;
-  assignmentCount?: number;
-}
-
-interface CandidateForm {
-  name: string;
-  email: string;
-}
-
-interface BulkUploadResult {
-  total: number;
-  success: number;
-  failed: number;
-  errors: string[];
-}
+import { BulkUploadResult, CandidateForm, CandidateRow } from './candidates.models';
+import {
+  CandidateFilterStatus,
+  CandidateFilterStatusValues,
+  CandidateStatusLabels,
+  CandidateMessages,
+  CandidateCsvMessages
+} from '../../../constants/candidates.constants';
 
 @Component({
   selector: 'app-candidates',
@@ -39,7 +25,7 @@ export class CandidatesComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
   searchTerm = '';
-  filterStatus: 'all' | 'active' | 'assigned' = 'all';
+  filterStatus: CandidateFilterStatus = CandidateFilterStatusValues.All;
   sortBy: 'name' | 'email' | 'date' = 'date';
   sortDesc = true;
 
@@ -85,13 +71,13 @@ export class CandidatesComponent implements OnInit, OnDestroy {
         next: (data: Candidate[]) => {
           this.candidates = data.map((c: Candidate) => ({
             ...c,
-            status: 'Active',
+            status: CandidateStatusLabels.Active,
             assignmentCount: 0
           }));
           this.loading = false;
         },
         error: (err: any) => {
-          this.error = 'Failed to load candidates';
+          this.error = CandidateMessages.LoadError;
           this.loading = false;
           console.error(err);
         }
@@ -106,7 +92,7 @@ export class CandidatesComponent implements OnInit, OnDestroy {
         next: (data: Assessment[]) => {
           this.assessments = data.filter((a: Assessment) => a.isActive);
         },
-        error: (err: any) => console.error('Failed to load assessments', err)
+        error: (err: any) => console.error(CandidateMessages.LoadAssessmentsError, err)
       });
   }
 
@@ -122,7 +108,7 @@ export class CandidatesComponent implements OnInit, OnDestroy {
     }
 
     // Status filter
-    if (this.filterStatus !== 'all') {
+    if (this.filterStatus !== CandidateFilterStatusValues.All) {
       result = result.filter((c) => c.status?.toLowerCase() === this.filterStatus);
     }
 
@@ -172,12 +158,12 @@ export class CandidatesComponent implements OnInit, OnDestroy {
 
   saveCandidate(): void {
     if (!this.formData.name.trim() || !this.formData.email.trim()) {
-      this.error = 'Name and email are required';
+      this.error = CandidateMessages.NameEmailRequired;
       return;
     }
 
     if (!this.isValidEmail(this.formData.email)) {
-      this.error = 'Invalid email format';
+      this.error = CandidateMessages.InvalidEmailFormat;
       return;
     }
 
@@ -204,14 +190,14 @@ export class CandidatesComponent implements OnInit, OnDestroy {
           this.cancelForm();
         },
         error: (err: any) => {
-          this.error = 'Failed to save candidate';
+          this.error = CandidateMessages.SaveError;
           console.error(err);
         }
       });
   }
 
   deleteCandidate(candidate: CandidateRow): void {
-    if (!confirm(`Are you sure you want to delete ${candidate.name}?`)) return;
+    if (!confirm(CandidateMessages.DeleteConfirm(candidate.name))) return;
 
     // Optimistic removal
     this.candidates = this.candidates.filter((c) => c.id !== candidate.id);
@@ -236,7 +222,7 @@ export class CandidatesComponent implements OnInit, OnDestroy {
 
   uploadBulkCandidates(): void {
     if (!this.bulkUploadFile) {
-      this.error = 'Please select a CSV file';
+      this.error = CandidateMessages.SelectCsvFile;
       return;
     }
 
@@ -268,7 +254,7 @@ export class CandidatesComponent implements OnInit, OnDestroy {
         for (let i = startIndex; i < lines.length; i++) {
           const parts = lines[i].split(',').map((p: string) => p.trim());
           if (parts.length < 2) {
-            result.errors.push(`Row ${i + 1}: Invalid format (expected name,email)`);
+            result.errors.push(CandidateCsvMessages.InvalidFormat(i + 1));
             result.failed++;
             continue;
           }
@@ -277,20 +263,20 @@ export class CandidatesComponent implements OnInit, OnDestroy {
           const email = parts[1];
 
           if (!name || !email) {
-            result.errors.push(`Row ${i + 1}: Name and email are required`);
+            result.errors.push(CandidateCsvMessages.NameEmailRequired(i + 1));
             result.failed++;
             continue;
           }
 
           if (!this.isValidEmail(email)) {
-            result.errors.push(`Row ${i + 1}: Invalid email format (${email})`);
+            result.errors.push(CandidateCsvMessages.InvalidEmail(i + 1, email));
             result.failed++;
             continue;
           }
 
           // Check for duplicates in candidates list
           if (this.candidates.some((c) => c.email?.toLowerCase() === email.toLowerCase())) {
-            result.errors.push(`Row ${i + 1}: Candidate ${email} already exists`);
+            result.errors.push(CandidateCsvMessages.CandidateExists(i + 1, email));
             result.failed++;
             continue;
           }
@@ -320,7 +306,7 @@ export class CandidatesComponent implements OnInit, OnDestroy {
         this.bulkUploadResult = result;
         this.bulkUploading = false;
       } catch (err) {
-        this.error = 'Failed to parse CSV file';
+        this.error = CandidateMessages.ParseCsvError;
         this.bulkUploading = false;
       }
     };
@@ -341,7 +327,7 @@ export class CandidatesComponent implements OnInit, OnDestroy {
 
   assignAssessment(): void {
     if (!this.assigningCandidate || !this.selectedAssessment) {
-      this.error = 'Please select an assessment';
+      this.error = CandidateMessages.SelectAssessment;
       return;
     }
 
@@ -360,7 +346,7 @@ export class CandidatesComponent implements OnInit, OnDestroy {
           this.loadCandidates();
         },
         error: (err: any) => {
-          this.error = 'Failed to assign assessment';
+          this.error = CandidateMessages.AssignError;
           console.error(err);
         }
       });

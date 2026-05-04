@@ -13,6 +13,14 @@ import {
   MonitoringSession,
   SuspiciousActivityEvent
 } from './monitoring.models';
+import {
+  MonitoringSignalRCommands,
+  MonitoringSignalREvents,
+  MonitoringDefaultLabels,
+  MonitoringAlertSeverity,
+  MonitoringAlertMessages,
+  MonitoringSessionStatus
+} from '../../../constants/monitoring.constants';
 
 @Injectable()
 export class MonitoringStateService implements OnDestroy {
@@ -27,7 +35,7 @@ export class MonitoringStateService implements OnDestroy {
   readonly alerts$ = this.alertsSubject.asObservable();
   readonly loading$ = this.loadingSubject.asObservable();
   readonly error$ = this.errorSubject.asObservable();
-  readonly connectionState$ = this.signalR.connectionState$.asObservable();
+  readonly connectionState$ = this.signalR.connectionState$;
 
   constructor(
     private readonly authService: AuthService,
@@ -91,10 +99,10 @@ export class MonitoringStateService implements OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.signalR.off('ProgressUpdated');
-    this.signalR.off('SuspiciousActivityDetected');
-    this.signalR.off('AssessmentCompleted');
-    this.signalR.off('CandidateJoined');
+    this.signalR.off(MonitoringSignalREvents.ProgressUpdated);
+    this.signalR.off(MonitoringSignalREvents.SuspiciousActivityDetected);
+    this.signalR.off(MonitoringSignalREvents.AssessmentCompleted);
+    this.signalR.off(MonitoringSignalREvents.CandidateJoined);
   }
 
   private connectRealtime(): void {
@@ -104,21 +112,21 @@ export class MonitoringStateService implements OnDestroy {
     }
 
     this.signalR.startConnection(environment.signalRHubUrl, user.token).then(() => {
-      this.signalR.send('JoinAdminMonitoringChannel');
+      this.signalR.send(MonitoringSignalRCommands.JoinAdminMonitoringChannel);
     }).catch((err) => {
       console.warn('SignalR connection failed:', err);
     });
 
-    this.signalR.on<AssessmentProgress>('ProgressUpdated', (progress) => {
+    this.signalR.on<AssessmentProgress>(MonitoringSignalREvents.ProgressUpdated, (progress) => {
       this.upsertSessionFromProgress(progress);
     });
 
-    this.signalR.on<SuspiciousActivityEvent | string>('SuspiciousActivityDetected', (event) => {
+    this.signalR.on<SuspiciousActivityEvent | string>(MonitoringSignalREvents.SuspiciousActivityDetected, (event) => {
       this.handleSuspiciousActivity(event);
     });
 
     this.signalR.on<{ candidateAssessmentId: string; candidateName?: string; connectedAt: string }>(
-      'CandidateJoined',
+      MonitoringSignalREvents.CandidateJoined,
       (event) => {
         this.patchSession(event.candidateAssessmentId, (session) => ({
           ...session,
@@ -129,7 +137,7 @@ export class MonitoringStateService implements OnDestroy {
     );
 
     this.signalR.on<{ candidateAssessmentId?: string; assessmentId?: string; completedAt?: string }>(
-      'AssessmentCompleted',
+      MonitoringSignalREvents.AssessmentCompleted,
       (event) => {
         const sessionId = event.candidateAssessmentId || event.assessmentId;
         if (!sessionId) {
@@ -138,7 +146,7 @@ export class MonitoringStateService implements OnDestroy {
 
         this.patchSession(sessionId, (session) => ({
           ...session,
-          status: 'Submitted',
+          status: MonitoringSessionStatus.Submitted,
           completionPercent: 100,
           remainingSeconds: 0,
           submittedAtUtc: event.completedAt || new Date().toISOString(),
@@ -167,12 +175,12 @@ export class MonitoringStateService implements OnDestroy {
         return {
           candidateAssessmentId: assignment.candidateAssessmentId,
           candidateId: assignment.candidateId || '',
-          candidateName: assignment.candidateName || candidate?.name || 'Candidate',
+          candidateName: assignment.candidateName || candidate?.name || MonitoringDefaultLabels.UnknownCandidate,
           candidateEmail: candidate?.email,
           assessmentId: assignment.assessmentId,
           assessmentTitle: assignment.assessmentTitle,
           status: progressItem?.status || assignment.status,
-          completionPercent: progressItem?.completionPercent ?? (assignment.status === 'Submitted' ? 100 : 0),
+          completionPercent: progressItem?.completionPercent ?? (assignment.status === MonitoringSessionStatus.Submitted ? 100 : 0),
           suspiciousEvents: progressItem?.suspiciousEvents ?? 0,
           remainingSeconds: progressItem?.remainingSeconds ?? 0,
           assignedAtUtc: assignment.assignedAtUtc,
@@ -208,9 +216,9 @@ export class MonitoringStateService implements OnDestroy {
     const nextSession: MonitoringSession = {
       candidateAssessmentId: progress.candidateAssessmentId,
       candidateId: '',
-      candidateName: progress.candidateName || 'Candidate',
+      candidateName: progress.candidateName || MonitoringDefaultLabels.UnknownCandidate,
       assessmentId: '',
-      assessmentTitle: 'Assessment',
+      assessmentTitle: MonitoringDefaultLabels.UnknownAssessment,
       status: progress.status,
       completionPercent: progress.completionPercent,
       suspiciousEvents: progress.suspiciousEvents,
@@ -226,10 +234,10 @@ export class MonitoringStateService implements OnDestroy {
       const syntheticAlert: MonitoringAlert = {
         id: `alert-${Date.now()}`,
         candidateAssessmentId: '',
-        candidateName: 'Candidate',
-        assessmentTitle: 'Assessment',
-        violationType: 'UNKNOWN',
-        severity: 'warning',
+        candidateName: MonitoringDefaultLabels.UnknownCandidate,
+        assessmentTitle: MonitoringDefaultLabels.UnknownAssessment,
+        violationType: MonitoringDefaultLabels.UnknownViolationType,
+        severity: MonitoringAlertSeverity.Warning,
         message: event,
         occurredAtUtc: new Date().toISOString()
       };
@@ -246,9 +254,9 @@ export class MonitoringStateService implements OnDestroy {
     const alert: MonitoringAlert = {
       id: `${sessionId}-${Date.now()}`,
       candidateAssessmentId: sessionId,
-      candidateName: session?.candidateName || event.candidateName || 'Candidate',
-      assessmentTitle: session?.assessmentTitle || 'Assessment',
-      violationType: event.violationType || 'SUSPICIOUS_ACTIVITY',
+      candidateName: session?.candidateName || event.candidateName || MonitoringDefaultLabels.UnknownCandidate,
+      assessmentTitle: session?.assessmentTitle || MonitoringDefaultLabels.UnknownAssessment,
+      violationType: event.violationType || MonitoringDefaultLabels.UnknownViolationDefault,
       severity: this.getSeverity(event.violationType),
       message: this.getAlertMessage(event.violationType),
       occurredAtUtc: event.reportedAt || new Date().toISOString()
@@ -263,7 +271,7 @@ export class MonitoringStateService implements OnDestroy {
           candidateName: alert.candidateName,
           assessmentId: '',
           assessmentTitle: alert.assessmentTitle,
-          status: 'InProgress',
+          status: MonitoringSessionStatus.InProgress,
           completionPercent: 0,
           suspiciousEvents: 1,
           remainingSeconds: 0,
@@ -307,16 +315,16 @@ export class MonitoringStateService implements OnDestroy {
 
   private getStatusRank(status: string): number {
     const normalized = status.toLowerCase();
-    if (normalized === 'inprogress') {
+    if (normalized === MonitoringSessionStatus.InProgress.toLowerCase()) {
       return 0;
     }
-    if (normalized === 'assigned') {
+    if (normalized === MonitoringSessionStatus.Assigned.toLowerCase()) {
       return 1;
     }
-    if (normalized === 'scheduled') {
+    if (normalized === MonitoringSessionStatus.Scheduled.toLowerCase()) {
       return 2;
     }
-    if (normalized === 'submitted') {
+    if (normalized === MonitoringSessionStatus.Submitted.toLowerCase()) {
       return 3;
     }
     return 4;
@@ -324,24 +332,24 @@ export class MonitoringStateService implements OnDestroy {
 
   private getSeverity(violationType?: string): MonitoringAlert['severity'] {
     if (!violationType) {
-      return 'warning';
+      return MonitoringAlertSeverity.Warning;
     }
 
     if (violationType.includes('FULLSCREEN') || violationType.includes('MULTIPLE')) {
-      return 'critical';
+      return MonitoringAlertSeverity.Critical;
     }
 
-    return 'warning';
+    return MonitoringAlertSeverity.Warning;
   }
 
   private getAlertMessage(violationType?: string): string {
     switch (violationType) {
       case 'TAB_SWITCH':
-        return 'Candidate switched tabs or minimized the assessment window.';
+        return MonitoringAlertMessages.TAB_SWITCH;
       case 'FULLSCREEN_EXIT':
-        return 'Candidate exited fullscreen during the assessment.';
+        return MonitoringAlertMessages.FULLSCREEN_EXIT;
       default:
-        return 'Suspicious activity detected during the assessment.';
+        return MonitoringAlertMessages.DEFAULT;
     }
   }
 }

@@ -1,11 +1,9 @@
 import { AssessmentQuestion } from './assessment.models';
+import type { CandidateAssessmentStatus } from '../../constants/candidate.constants';
 
-export type CandidateAssessmentStatus =
-  | 'Scheduled'
-  | 'Assigned'
-  | 'InProgress'
-  | 'Submitted'
-  | 'Evaluated';
+// Re-export constants from centralized location
+export type { CandidateAssessmentStatus } from '../../constants/candidate.constants';
+export { CandidateAssessmentStatusValues } from '../../constants/candidate.constants';
 
 export interface Candidate {
   id: string;

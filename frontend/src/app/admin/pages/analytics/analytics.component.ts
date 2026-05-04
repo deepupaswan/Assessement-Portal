@@ -6,44 +6,13 @@ import { AnalyticsOverview, ResultRecord } from '../../../core/models/result.mod
 import { AssessmentApiService } from '../../../core/services/assessment-api.service';
 import { CandidateApiService } from '../../../core/services/candidate-api.service';
 import { ResultApiService } from '../../../core/services/result-api.service';
-
-interface AnalyticsResultView {
-  id: string;
-  candidateId: string;
-  candidateName: string;
-  candidateEmail: string;
-  assessmentId: string;
-  assessmentTitle: string;
-  score: number;
-  maxScore: number;
-  percentage: number;
-  isPassed: boolean;
-  status: string;
-  completedAt: string;
-  remarks?: string;
-}
-
-interface AssessmentPerformanceView {
-  assessmentId: string;
-  assessmentTitle: string;
-  candidateCount: number;
-  passRate: number;
-  averagePercentage: number;
-  averageScore: number;
-  highestScore: number;
-  latestCompletedAt?: string;
-}
-
-interface ScoreBucket {
-  label: string;
-  count: number;
-  color: string;
-}
-
-interface TrendPoint {
-  label: string;
-  count: number;
-}
+import {
+  AnalyticsResultView,
+  AssessmentPerformanceView,
+  ScoreBucket,
+  TrendPoint
+} from './analytics.models';
+import { AnalyticsMessages } from '../../../constants/analytics.constants';
 
 @Component({
   selector: 'app-analytics',
@@ -186,7 +155,7 @@ export class AnalyticsComponent implements OnInit {
 
         return {
           assessmentId,
-          assessmentTitle: results[0]?.assessmentTitle || 'Assessment',
+          assessmentTitle: results[0]?.assessmentTitle || AnalyticsMessages.FallbackAssessment,
           candidateCount: results.length,
           passRate: (results.filter((result) => result.isPassed).length / results.length) * 100,
           averagePercentage:
@@ -241,7 +210,7 @@ export class AnalyticsComponent implements OnInit {
         this.results = this.joinResults(results, assessments, candidates);
       },
       error: (err: any) => {
-        this.error = err.error?.message ?? 'Failed to load analytics';
+        this.error = err.error?.message ?? AnalyticsMessages.LoadError;
         console.error(err);
       },
       complete: () => {
@@ -265,10 +234,10 @@ export class AnalyticsComponent implements OnInit {
       return {
         id: result.id,
         candidateId: result.candidateId,
-        candidateName: candidate?.name || 'Candidate',
-        candidateEmail: candidate?.email || 'Email unavailable',
+        candidateName: candidate?.name || AnalyticsMessages.FallbackCandidate,
+        candidateEmail: candidate?.email || AnalyticsMessages.EmailUnavailable,
         assessmentId: result.assessmentId,
-        assessmentTitle: assessment?.title || 'Assessment',
+        assessmentTitle: assessment?.title || AnalyticsMessages.FallbackAssessment,
         score: result.score,
         maxScore: result.maxScore,
         percentage: result.percentage,

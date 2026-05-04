@@ -4,6 +4,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { MonitoringAlert, MonitoringSession } from './monitoring.models';
 import { MonitoringStateService } from './monitoring-state.service';
+import { MonitoringConnectionLabels } from '../../../constants/monitoring.constants';
 
 @Component({
   selector: 'app-monitoring',
@@ -127,15 +128,15 @@ export class MonitoringComponent implements OnInit, OnDestroy {
   getConnectionLabel(): string {
     switch (this.connectionState) {
       case 'connected':
-        return 'Live';
+        return MonitoringConnectionLabels.connected;
       case 'connecting':
-        return 'Connecting';
+        return MonitoringConnectionLabels.connecting;
       case 'reconnecting':
-        return 'Reconnecting';
+        return MonitoringConnectionLabels.reconnecting;
       case 'error':
-        return 'Offline';
+        return MonitoringConnectionLabels.error;
       default:
-        return 'Disconnected';
+        return MonitoringConnectionLabels.default;
     }
   }
 }

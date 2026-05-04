@@ -1,11 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Router } from '@angular/router';
-
-interface NavItem {
-  icon: string;
-  label: string;
-  route: string;
-}
+import { NavItem } from './admin-sidebar.models';
+import { AdminNavItems } from '../../constants/admin-navigation.constants';
 
 @Component({
   selector: 'app-admin-sidebar',
@@ -16,15 +12,7 @@ export class AdminSidebarComponent {
   @Input() isOpen = true;
   @Output() toggleSidebar = new EventEmitter<void>();
 
-  navItems: NavItem[] = [
-    { icon: 'icon-grid', label: 'Dashboard', route: '/admin/dashboard' },
-    { icon: 'icon-file-text', label: 'Assessments', route: '/admin/assessments' },
-    { icon: 'icon-help-circle', label: 'Questions', route: '/admin/questions' },
-    { icon: 'icon-users', label: 'Candidates', route: '/admin/candidates' },
-    { icon: 'icon-send', label: 'Assignments', route: '/admin/assignments' },
-    { icon: 'icon-activity', label: 'Live Monitoring', route: '/admin/monitoring' },
-    { icon: 'icon-bar-chart-2', label: 'Analytics', route: '/admin/analytics' }
-  ];
+  navItems: NavItem[] = [...AdminNavItems] as NavItem[];
 
   constructor(public router: Router) {}
 
