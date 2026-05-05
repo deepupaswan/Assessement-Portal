@@ -34,6 +34,7 @@ export interface AssessmentQuestion {
   type?: QuestionType;
   marks?: number;
   maxScore?: number;
+  order?: number;
   options: QuestionOption[];
 }
 

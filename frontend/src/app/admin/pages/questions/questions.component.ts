@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AssessmentApiService } from '../../../core/services/assessment-api.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { AssessmentDetail } from '../../../core/models/assessment.models';
 import { QuestionType, QuestionTypeValues, QuestionTypeLabels } from '../../../constants/assessment.constants';
 import { QuestionForm, QuestionRow } from './questions.models';
@@ -32,6 +33,7 @@ export class QuestionsComponent implements OnInit, OnDestroy {
 
   constructor(
     private assessmentApi: AssessmentApiService,
+    private notificationService: NotificationService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -107,9 +109,58 @@ export class QuestionsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // TODO: Call API to save question
-    // For now, just close the form
-    this.cancelForm();
+    if (!this.assessmentId) {
+      this.notificationService.showError(QuestionsMessages.AssessmentIdMissing);
+      return;
+    }
+
+    const payload = {
+      text: this.formData.text,
+      type: this.formData.type,
+      maxScore: this.formData.marks ?? 1,
+      correctAnswer: this.formData.correctAnswer,
+      isRequired: true,
+      order: this.editingQuestion?.order ?? (this.questions.length + 1),
+      options: (this.formData.options || []).map((opt, idx) => ({
+        text: opt.text,
+        isCorrect: opt.isCorrect ?? false,
+        order: idx + 1
+      }))
+    };
+
+    if (this.editingQuestion) {
+      // Update existing question
+      this.assessmentApi.updateQuestion(this.assessmentId, this.editingQuestion.id, payload)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.notificationService.showSuccess(QuestionsMessages.QuestionUpdatedSuccess);
+            this.cancelForm();
+            this.loadAssessment();
+          },
+          error: (err: any) => {
+            const message = err.error?.message ?? QuestionsMessages.FailedToUpdateQuestion;
+            this.notificationService.showError(message);
+            console.error('Update question error:', err);
+          }
+        });
+    } else {
+      // Create new question
+      this.assessmentApi.createQuestion(this.assessmentId, payload)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (newQuestion) => {
+            this.notificationService.showSuccess(QuestionsMessages.QuestionAddedSuccess);
+            this.questions.push(newQuestion as QuestionRow);
+            this.cancelForm();
+          },
+          error: (err: any) => {
+            const message = err.error?.message ?? QuestionsMessages.FailedToAddQuestion;
+            this.notificationService.showError(message);
+            console.error('Create question error:', err);
+          }
+        });
+    }
   }
 
   deleteQuestion(question: QuestionRow): void {
@@ -117,22 +168,67 @@ export class QuestionsComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.assessmentId) {
+      this.notificationService.showError(QuestionsMessages.AssessmentIdMissing);
+      return;
+    }
+
     question.isDeleting = true;
-    // TODO: Call API to delete question
-    // For now, just remove from list
-    setTimeout(() => {
-      this.questions = this.questions.filter(q => q.id !== question.id);
-    }, 500);
+    this.assessmentApi.deleteQuestion(this.assessmentId, question.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.questions = this.questions.filter(q => q.id !== question.id);
+          this.notificationService.showSuccess(QuestionsMessages.QuestionDeletedSuccess);
+        },
+        error: (err: any) => {
+          question.isDeleting = false;
+          const message = err.error?.message ?? QuestionsMessages.FailedToDeleteQuestion;
+          this.notificationService.showError(message);
+          console.error('Delete question error:', err);
+        }
+      });
   }
 
   moveQuestion(question: QuestionRow, direction: 'up' | 'down'): void {
+    if (!this.assessmentId) {
+      this.notificationService.showError(QuestionsMessages.AssessmentIdMissing);
+      return;
+    }
+
     const index = this.questions.indexOf(question);
-    if (direction === 'up' && index > 0) {
+    const canMove = (direction === 'up' && index > 0) || (direction === 'down' && index < this.questions.length - 1);
+
+    if (!canMove) return;
+
+    // Store original state for rollback
+    const originalQuestions = [...this.questions];
+
+    // Swap in UI
+    if (direction === 'up') {
       [this.questions[index], this.questions[index - 1]] = [this.questions[index - 1], this.questions[index]];
-    } else if (direction === 'down' && index < this.questions.length - 1) {
+    } else if (direction === 'down') {
       [this.questions[index], this.questions[index + 1]] = [this.questions[index + 1], this.questions[index]];
     }
-    // TODO: Call API to update question order
+
+    // Get the new order for this question
+    const newOrder = direction === 'up' ? index : index + 2;
+
+    // Call API to persist the change
+    this.assessmentApi.updateQuestion(this.assessmentId, question.id, { order: newOrder })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.notificationService.showSuccess(QuestionsMessages.QuestionOrderUpdatedSuccess);
+        },
+        error: (err: any) => {
+          // Rollback on error
+          this.questions = originalQuestions;
+          const message = err.error?.message ?? QuestionsMessages.FailedToUpdateQuestionOrder;
+          this.notificationService.showError(message);
+          console.error('Move question error:', err);
+        }
+      });
   }
 
   getQuestionTypeLabel(type?: QuestionType): string {

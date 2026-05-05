@@ -1,4 +1,6 @@
 <div class="portal-shell">
+  <app-toast-notification></app-toast-notification>
+  
   <nav class="navbar navbar-expand-lg portal-nav">
     <div class="container-fluid">
       <a class="navbar-brand fw-bold" routerLink="/">Assessment Portal</a>
@@ -19,7 +21,7 @@
     </div>
   </nav>
 
-  <div class="container py-3">
+  <div class="container-fluid py-3">
     <app-realtime-status></app-realtime-status>
     <router-outlet></router-outlet>
   </div>

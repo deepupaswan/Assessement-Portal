@@ -175,7 +175,9 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
         candidateAssessmentId,
         user.name
       );
-    }).catch(() => {});
+    }).catch(err => {
+      console.error('SignalR connection failed in candidate assessment:', err);
+    });
 
     this.signalR.on<number>(CandidateAssessmentSignalREvents.TimerUpdated, remainingSeconds => {
       this.remainingSeconds = remainingSeconds;

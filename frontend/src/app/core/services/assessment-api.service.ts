@@ -44,5 +44,13 @@ export class AssessmentApiService {
   createQuestion(assessmentId: string, payload: CreateQuestionRequest): Observable<AssessmentQuestion> {
     return this.http.post<AssessmentQuestion>(`/api/assessments/${assessmentId}/questions`, payload);
   }
+
+  updateQuestion(assessmentId: string, questionId: string, payload: Partial<CreateQuestionRequest>): Observable<void> {
+    return this.http.put<void>(`/api/assessments/${assessmentId}/questions/${questionId}`, payload);
+  }
+
+  deleteQuestion(assessmentId: string, questionId: string): Observable<void> {
+    return this.http.delete<void>(`/api/assessments/${assessmentId}/questions/${questionId}`);
+  }
 }
 

@@ -281,7 +281,9 @@ export class AdminDashboardComponent implements OnDestroy {
 
     this.signalR.startConnection(environment.signalRHubUrl, user.token).then(() => {
       this.signalR.send('JoinAdminMonitoringChannel');
-    }).catch(() => {});
+    }).catch(err => {
+      console.error('SignalR connection failed in admin dashboard:', err);
+    });
 
     this.signalR.on<AssessmentProgress>('ProgressUpdated', progress => {
       const existing = this.liveProgress.findIndex(p => p.candidateAssessmentId === progress.candidateAssessmentId);

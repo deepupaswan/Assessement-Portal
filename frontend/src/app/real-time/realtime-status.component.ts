@@ -32,7 +32,9 @@ export class RealtimeStatusComponent implements OnInit, OnDestroy {
       // Only start the connection at app-level / auth-level. Do not stop it here — other
       // components may rely on the shared hub connection. Keep this call if your app
       // requires this component to initiate startup, otherwise centralize startup.
-      this.signalR.startConnection(environment.signalRHubUrl, user.token).catch(() => {});
+      this.signalR.startConnection(environment.signalRHubUrl, user.token).catch(err => {
+        console.error('SignalR connection failed:', err);
+      });
 
       // Subscribe to connection state and clean up with takeUntil
       this.signalR.connectionState$.pipe(takeUntil(this.destroy$)).subscribe(state => this.connectionState = state);

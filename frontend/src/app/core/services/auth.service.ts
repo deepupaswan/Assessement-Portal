@@ -37,8 +37,13 @@ export class AuthService {
     );
   }
 
-  register(name: string, email: string, password: string): Observable<AuthUser> {
-    return this.http.post<AuthUser>(`${this.authApiBaseUrl}/register`, { name, email, password }).pipe(
+  register(name: string, email: string, password: string, role?: string): Observable<AuthUser> {
+    const payload: any = { name, email, password };
+    if (role) {
+      payload.role = role;
+    }
+
+    return this.http.post<AuthUser>(`${this.authApiBaseUrl}/register`, payload).pipe(
       tap(user => this.setUser(user))
     );
   }

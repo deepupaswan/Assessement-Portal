@@ -5,6 +5,7 @@ import { CoreModule } from './core/core.module';
 import { SharedModule } from './shared/shared.module';
 import { AppComponent } from './app.component';
 import { RealTimeModule } from './real-time/real-time.module';
+import { ToastNotificationComponent } from './shared/components/toast-notification/toast-notification.component';
 
 @NgModule({
   declarations: [AppComponent],
@@ -13,7 +14,8 @@ import { RealTimeModule } from './real-time/real-time.module';
     AppRoutingModule,
     CoreModule,
     SharedModule,
-    RealTimeModule
+    RealTimeModule,
+    ToastNotificationComponent
   ],
   bootstrap: [AppComponent]
 })
