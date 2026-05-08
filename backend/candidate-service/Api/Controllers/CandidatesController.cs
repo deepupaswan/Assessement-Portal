@@ -15,29 +15,157 @@ namespace CandidateService.Api.Controllers;
 [Authorize]
 public class CandidatesController : ControllerBase
 {
+    private static readonly HashSet<string> AllowedSortBy = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "score",
+        "createdAt",
+        "name",
+        "email"
+    };
+
+    private static readonly HashSet<string> AllowedSortOrder = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "asc",
+        "desc"
+    };
+
     private readonly ICandidateService _candidateService;
+    private readonly ICandidateSearchService _candidateSearchService;
     private readonly ICandidateAssessmentService _assessmentService;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<CandidatesController> _logger;
+    private readonly IWebHostEnvironment _environment;
     private readonly HttpClient _httpClient;
     private readonly string _assessmentServiceBaseUrl;
     private readonly string _resultServiceBaseUrl;
 
     public CandidatesController(
         ICandidateService candidateService,
+        ICandidateSearchService candidateSearchService,
         ICandidateAssessmentService assessmentService,
         IPublishEndpoint publishEndpoint,
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
+        IWebHostEnvironment environment,
         ILogger<CandidatesController> logger)
     {
         _candidateService = candidateService;
+        _candidateSearchService = candidateSearchService;
         _assessmentService = assessmentService;
         _publishEndpoint = publishEndpoint;
+        _environment = environment;
         _httpClient = httpClientFactory.CreateClient("InternalServices");
         _assessmentServiceBaseUrl = (configuration["ServiceUrls:AssessmentService"] ?? "http://localhost:5098").TrimEnd('/');
         _resultServiceBaseUrl = (configuration["ServiceUrls:ResultService"] ?? "http://localhost:5160").TrimEnd('/');
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Searches candidates using Elasticsearch with pagination, filtering, and sorting.
+    /// </summary>
+    /// <param name="q">Free-text query for candidate name or email.</param>
+    /// <param name="page">Page number (1-based).</param>
+    /// <param name="size">Page size (1-100).</param>
+    /// <param name="email">Optional exact email filter (case-insensitive).</param>
+    /// <param name="createdFromUtc">Optional lower bound for candidate created timestamp (UTC).</param>
+    /// <param name="createdToUtc">Optional upper bound for candidate created timestamp (UTC).</param>
+    /// <param name="sortBy">Sort field. Allowed values: score, createdAt, name, email.</param>
+    /// <param name="sortOrder">Sort direction. Allowed values: asc, desc.</param>
+    [HttpGet("search")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> SearchCandidates(
+        [FromQuery] string q,
+        [FromQuery] int page = 1,
+        [FromQuery] int size = 20,
+        [FromQuery] string? email = null,
+        [FromQuery] DateTime? createdFromUtc = null,
+        [FromQuery] DateTime? createdToUtc = null,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] string? sortOrder = null)
+    {
+        if (string.IsNullOrWhiteSpace(q))
+            return BadRequest(new { message = "Search query is required" });
+
+        if (createdFromUtc.HasValue && createdToUtc.HasValue && createdFromUtc > createdToUtc)
+            return BadRequest(new { message = "createdFromUtc must be earlier than or equal to createdToUtc" });
+
+        if (!string.IsNullOrWhiteSpace(sortBy) && !AllowedSortBy.Contains(sortBy))
+            return BadRequest(new { message = "sortBy must be one of: score, createdAt, name, email" });
+
+        if (!string.IsNullOrWhiteSpace(sortOrder) && !AllowedSortOrder.Contains(sortOrder))
+            return BadRequest(new { message = "sortOrder must be one of: asc, desc" });
+
+        try
+        {
+            var searchResult = await _candidateSearchService.SearchCandidatesAsync(
+                q,
+                page,
+                size,
+                email,
+                createdFromUtc,
+                createdToUtc,
+                sortBy,
+                sortOrder);
+            return Ok(searchResult);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Elasticsearch search failed for query {Query}", q);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Search is temporarily unavailable" });
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogError(ex, "Elasticsearch search timed out for query {Query}", q);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Search timed out" });
+        }
+    }
+
+    [HttpPost("search/reset-reindex")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ResetAndReindexCandidates()
+    {
+        if (_environment.IsProduction())
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Reset and reindex is disabled in production" });
+
+        try
+        {
+            await _candidateSearchService.ResetIndexAsync();
+            var candidates = await _candidateService.GetAllCandidatesAsync();
+            var result = await _candidateSearchService.ReindexCandidatesAsync(candidates);
+            return Ok(result);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Elasticsearch reset and reindex operation failed");
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Reset and reindex is temporarily unavailable" });
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogError(ex, "Elasticsearch reset and reindex operation timed out");
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Reset and reindex timed out" });
+        }
+    }
+
+    [HttpPost("search/reindex")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ReindexCandidates()
+    {
+        try
+        {
+            var candidates = await _candidateService.GetAllCandidatesAsync();
+            var result = await _candidateSearchService.ReindexCandidatesAsync(candidates);
+            return Ok(result);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "Elasticsearch reindex operation failed");
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Reindex is temporarily unavailable" });
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogError(ex, "Elasticsearch reindex operation timed out");
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Reindex timed out" });
+        }
     }
 
     [HttpGet]

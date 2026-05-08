@@ -19,6 +19,12 @@ namespace CandidateService.Infrastructure.Persistence
                 .WithMany()
                 .HasForeignKey(ca => ca.CandidateId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CandidateAssessment>()
+                .HasIndex(ca => ca.AssessmentId);
+
+            modelBuilder.Entity<CandidateAssessment>()
+                .HasIndex(ca => new { ca.CandidateId, ca.AssessmentId });
         }
     }
 }

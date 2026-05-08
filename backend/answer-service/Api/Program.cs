@@ -2,19 +2,55 @@ using AnswerService.Api.Middleware;
 using AnswerService.Application.Services;
 using AnswerService.Infrastructure;
 using AnswerService.Infrastructure.Persistence;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using Serilog.Core;
 using System.Text;
 using Swashbuckle.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Serilog for structured logging (CRITICAL FOR DEBUGGING)
+builder.Host.UseSerilog((hostContext, loggerConfig) =>
+{
+    var isDevelopment = hostContext.HostingEnvironment.IsDevelopment();
+    
+    loggerConfig
+        .MinimumLevel.Information()
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("MachineName", Environment.MachineName)
+        .Enrich.WithProperty("Service", "AnswerService")
+        .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{Service}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")
+        .WriteTo.File(
+            path: "logs/answer-service-.log",
+            rollingInterval: RollingInterval.Day,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{CorrelationId}] [{UserEmail}] {Message:lj}{NewLine}{Exception}");
+
+    if (isDevelopment)
+    {
+        loggerConfig.MinimumLevel.Debug();
+    }
+});
+
+// Load user secrets in development (CRITICAL SECURITY)
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>(optional: true);
+}
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Add FluentValidation for input validation (CRITICAL SECURITY)
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Add CORS configuration for frontend and docker containers
 builder.Services.AddCors(options =>
@@ -95,6 +131,7 @@ if (!app.Environment.IsProduction())
 }
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();

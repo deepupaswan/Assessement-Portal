@@ -2,68 +2,71 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using ResultService.Application.Events;
+using ResultService.Application.Repositories;
 using ResultService.Application.Services;
 using ResultService.Domain.Entities;
-using ResultService.Infrastructure.Persistence;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text;
 
 namespace ResultService.Infrastructure.Services;
 
 public class ResultAppService : IResultService
 {
-    private readonly ResultDbContext _dbContext;
+    private readonly IResultRepository _resultRepository;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<ResultAppService> _logger;
     private readonly HttpClient _httpClient;
     private readonly string _answerServiceBaseUrl;
     private readonly string _assessmentServiceBaseUrl;
+    private readonly string _jwtKey;
+    private readonly string _jwtIssuer;
+    private readonly string _jwtAudience;
 
     public ResultAppService(
-        ResultDbContext dbContext,
+        IResultRepository resultRepository,
         IPublishEndpoint publishEndpoint,
         ILogger<ResultAppService> logger,
         HttpClient httpClient,
         IConfiguration configuration)
     {
-        _dbContext = dbContext;
+        _resultRepository = resultRepository;
         _publishEndpoint = publishEndpoint;
         _logger = logger;
         _httpClient = httpClient;
         _answerServiceBaseUrl = (configuration["ServiceUrls:AnswerService"] ?? "http://localhost:5118").TrimEnd('/');
         _assessmentServiceBaseUrl = (configuration["ServiceUrls:AssessmentService"] ?? "http://localhost:5098").TrimEnd('/');
+        _jwtKey = configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+        _jwtIssuer = configuration["Jwt:Issuer"] ?? "IdentityService";
+        _jwtAudience = configuration["Jwt:Audience"] ?? "AssessmentPortal";
     }
 
     public async Task<IReadOnlyList<Result>> GetAllAsync()
-        => await _dbContext.Results.AsNoTracking().ToListAsync();
+        => await _resultRepository.GetAllAsync();
 
     public async Task<Result?> GetByIdAsync(Guid id)
-        => await _dbContext.Results.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id);
+        => await _resultRepository.GetByIdAsync(id);
 
     public async Task<IReadOnlyList<Result>> GetByCandidateIdAsync(Guid candidateId)
-        => await _dbContext.Results
-            .AsNoTracking()
-            .Where(r => r.CandidateId == candidateId)
-            .ToListAsync();
+        => await _resultRepository.GetByCandidateIdAsync(candidateId);
 
     public async Task<IReadOnlyList<Result>> GetByAssessmentIdAsync(Guid assessmentId)
-        => await _dbContext.Results
-            .AsNoTracking()
-            .Where(r => r.AssessmentId == assessmentId)
-            .ToListAsync();
+        => await _resultRepository.GetByAssessmentIdAsync(assessmentId);
 
     public async Task<Result?> GetByCandidateAndAssessmentAsync(Guid candidateId, Guid assessmentId)
-        => await _dbContext.Results
-            .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.CandidateId == candidateId && r.AssessmentId == assessmentId);
+        => await _resultRepository.GetByCandidateAndAssessmentAsync(candidateId, assessmentId);
 
     public async Task<Result> CreateAsync(Result result)
     {
         result.Id = Guid.NewGuid();
         result.CalculatedAt = DateTime.UtcNow;
 
-        _dbContext.Results.Add(result);
-        await _dbContext.SaveChangesAsync();
+        await _resultRepository.AddAsync(result);
+        await _resultRepository.SaveChangesAsync();
         await PublishCreatedEvent(result);
 
         return result;
@@ -71,19 +74,18 @@ public class ResultAppService : IResultService
 
     public async Task<Result> UpdateAsync(Result result)
     {
-        _dbContext.Results.Update(result);
-        await _dbContext.SaveChangesAsync();
+        _resultRepository.Update(result);
+        await _resultRepository.SaveChangesAsync();
         return result;
     }
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var result = await _dbContext.Results.FindAsync(id);
-        if (result == null)
+        var deleted = await _resultRepository.DeleteAsync(id);
+        if (!deleted)
             return false;
 
-        _dbContext.Results.Remove(result);
-        await _dbContext.SaveChangesAsync();
+        await _resultRepository.SaveChangesAsync();
         return true;
     }
 
@@ -91,8 +93,7 @@ public class ResultAppService : IResultService
     {
         try
         {
-            var existing = await _dbContext.Results
-                .FirstOrDefaultAsync(r => r.CandidateId == candidateId && r.AssessmentId == assessmentId);
+            var existing = await _resultRepository.GetByCandidateAndAssessmentAsync(candidateId, assessmentId, asNoTracking: false);
 
             if (existing != null && existing.Status == "Published")
                 return existing;
@@ -169,11 +170,11 @@ public class ResultAppService : IResultService
             result.Remarks = isPassed ? "Assessment passed successfully" : "Assessment not passed";
 
             if (existing == null)
-                _dbContext.Results.Add(result);
+                await _resultRepository.AddAsync(result);
             else
-                _dbContext.Results.Update(result);
+                _resultRepository.Update(result);
 
-            await _dbContext.SaveChangesAsync();
+            await _resultRepository.SaveChangesAsync();
             await PublishCreatedEvent(result);
 
             return result;
@@ -191,29 +192,27 @@ public class ResultAppService : IResultService
 
     public async Task<Result> PublishResultAsync(Guid resultId)
     {
-        var result = await _dbContext.Results.FindAsync(resultId)
+        var result = await _resultRepository.GetByIdAsync(resultId)
             ?? throw new InvalidOperationException($"Result with ID {resultId} not found");
 
         result.Status = "Published";
         result.PublishedAt = DateTime.UtcNow;
 
-        _dbContext.Results.Update(result);
-        await _dbContext.SaveChangesAsync();
+        _resultRepository.Update(result);
+        await _resultRepository.SaveChangesAsync();
 
         return result;
     }
 
     public async Task<IReadOnlyList<Result>> GetPassedCandidatesAsync(Guid assessmentId)
-        => await _dbContext.Results
-            .AsNoTracking()
-            .Where(r => r.AssessmentId == assessmentId && r.IsPassed)
-            .ToListAsync();
+        => (await _resultRepository.GetByAssessmentIdAsync(assessmentId))
+            .Where(r => r.IsPassed)
+            .ToList();
 
     public async Task<IReadOnlyList<Result>> GetFailedCandidatesAsync(Guid assessmentId)
-        => await _dbContext.Results
-            .AsNoTracking()
-            .Where(r => r.AssessmentId == assessmentId && !r.IsPassed)
-            .ToListAsync();
+        => (await _resultRepository.GetByAssessmentIdAsync(assessmentId))
+            .Where(r => !r.IsPassed)
+            .ToList();
 
     private async Task PublishCreatedEvent(Result result)
     {
@@ -231,8 +230,10 @@ public class ResultAppService : IResultService
     {
         try
         {
-            var response = await _httpClient.GetAsync(
+            using var request = CreateAuthorizedRequest(
+                HttpMethod.Get,
                 $"{_answerServiceBaseUrl}/api/assessments/{assessmentId}/answers/candidates/{candidateId}");
+            var response = await _httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -256,8 +257,20 @@ public class ResultAppService : IResultService
     {
         try
         {
-            var questions = await _httpClient.GetFromJsonAsync<List<QuestionDto>>(
+            using var request = CreateAuthorizedRequest(
+                HttpMethod.Get,
                 $"{_assessmentServiceBaseUrl}/api/assessments/{assessmentId}/questions");
+            var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "Failed to retrieve questions from Assessment Service. Status: {StatusCode}",
+                    response.StatusCode);
+                return new List<QuestionDto>();
+            }
+
+            var questions = await response.Content.ReadFromJsonAsync<List<QuestionDto>>();
 
             return questions ?? new List<QuestionDto>();
         }
@@ -289,6 +302,38 @@ public class ResultAppService : IResultService
 
         var manuallyCorrect = answer.IsCorrect == true;
         return (manuallyCorrect, manuallyCorrect ? Math.Min(answer.PointsObtained ?? maxScore, maxScore) : 0);
+    }
+
+    private HttpRequestMessage CreateAuthorizedRequest(HttpMethod method, string requestUri)
+    {
+        var request = new HttpRequestMessage(method, requestUri);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", CreateServiceAccessToken());
+        return request;
+    }
+
+    private string CreateServiceAccessToken()
+    {
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, "result-service"),
+            new Claim(ClaimTypes.Name, "Result Service"),
+            new Claim(ClaimTypes.Email, "result-service@internal.local"),
+            new Claim(ClaimTypes.Role, "Admin")
+        };
+
+        var credentials = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey)),
+            SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: _jwtIssuer,
+            audience: _jwtAudience,
+            claims: claims,
+            notBefore: DateTime.UtcNow.AddMinutes(-1),
+            expires: DateTime.UtcNow.AddMinutes(5),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     private sealed class CandidateAnswersResponse
