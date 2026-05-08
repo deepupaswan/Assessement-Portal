@@ -1,8 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { SignalRService } from '../core/services/signalr.service';
 import { AuthService } from '../core/services/auth.service';
-import { Subscription, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { switchMap, takeUntil } from 'rxjs/operators';
+import { from } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { RealtimeStatusUi } from '../constants/realtime.constants';
 
@@ -21,7 +22,6 @@ export class RealtimeStatusComponent implements OnInit, OnDestroy {
   readonly ui = RealtimeStatusUi;
 
   connectionState = 'disconnected';
-  private sub?: Subscription;
   private readonly destroy$ = new Subject<void>();
 
   constructor(private signalR: SignalRService, private auth: AuthService) {}
@@ -29,15 +29,19 @@ export class RealtimeStatusComponent implements OnInit, OnDestroy {
   ngOnInit() {
     const user = this.auth.getUser();
     if (user) {
-      // Only start the connection at app-level / auth-level. Do not stop it here — other
-      // components may rely on the shared hub connection. Keep this call if your app
-      // requires this component to initiate startup, otherwise centralize startup.
-      this.signalR.startConnection(environment.signalRHubUrl, user.token).catch(err => {
-        console.error('SignalR connection failed:', err);
-      });
-
-      // Subscribe to connection state and clean up with takeUntil
-      this.signalR.connectionState$.pipe(takeUntil(this.destroy$)).subscribe(state => this.connectionState = state);
+      // Use switchMap to: 
+      // 1. Convert the Promise from startConnection() to an Observable using from()
+      // 2. Switch to listening to connectionState$ after connection starts
+      // 3. Automatically unsubscribe from previous subscription when switching
+      from(this.signalR.startConnection(environment.signalRHubUrl, user.token))
+        .pipe(
+          switchMap(() => this.signalR.connectionState$),
+          takeUntil(this.destroy$)
+        )
+        .subscribe({
+          next: (state) => this.connectionState = state,
+          error: (err) => console.error('SignalR connection error:', err)
+        });
     }
   }
 

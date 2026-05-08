@@ -6,6 +6,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,7 +14,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+});
 
 // Add CORS configuration for frontend and docker containers
 builder.Services.AddCors(options =>
@@ -36,6 +45,13 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<CandidateService.Infrastructure.Persistence.CandidateDbContext>(options =>
     options.UseSqlServer(connectionString));
+
+var elasticsearchUrl = builder.Configuration["Elasticsearch:Url"] ?? "http://localhost:9200";
+builder.Services.AddHttpClient<ICandidateSearchService, CandidateSearchService>(client =>
+{
+    client.BaseAddress = new Uri(elasticsearchUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 
 builder.Services.AddScoped<ICandidateService, CandidateService.Infrastructure.Services.CandidateService>();
 builder.Services.AddScoped<ICandidateAssessmentService, CandidateAssessmentService>();

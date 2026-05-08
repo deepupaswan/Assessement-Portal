@@ -8,10 +8,12 @@ namespace CandidateService.Infrastructure.Services;
 public class CandidateService : ICandidateService
 {
     private readonly CandidateDbContext _context;
+    private readonly ICandidateSearchService _candidateSearchService;
 
-    public CandidateService(CandidateDbContext context)
+    public CandidateService(CandidateDbContext context, ICandidateSearchService candidateSearchService)
     {
         _context = context;
+        _candidateSearchService = candidateSearchService;
     }
 
     public async Task<Candidate> CreateCandidateAsync(string name, string email)
@@ -26,6 +28,7 @@ public class CandidateService : ICandidateService
 
         _context.Candidates.Add(candidate);
         await _context.SaveChangesAsync();
+        await _candidateSearchService.IndexCandidateAsync(candidate);
 
         return candidate;
     }
@@ -57,6 +60,7 @@ public class CandidateService : ICandidateService
         candidate.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+        await _candidateSearchService.IndexCandidateAsync(candidate);
         return true;
     }
 
@@ -68,6 +72,7 @@ public class CandidateService : ICandidateService
 
         _context.Candidates.Remove(candidate);
         await _context.SaveChangesAsync();
+        await _candidateSearchService.DeleteCandidateAsync(id);
         return true;
     }
 }
