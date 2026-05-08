@@ -1,5 +1,7 @@
+using IdentityService.Application.Repositories;
 using IdentityService.Application.Services;
 using IdentityService.Infrastructure.Persistence;
+using IdentityService.Infrastructure.Persistence.Repositories;
 using IdentityService.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +12,7 @@ public static class InfrastructureServiceRegistration
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, string connectionString)
     {
         services.AddPersistenceServices(connectionString);
+        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IJwtService, JwtService>();
         return services;

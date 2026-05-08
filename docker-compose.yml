@@ -131,6 +131,7 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      Jwt__Key: ${JWT_KEY:-ChangeThisIdentityJwtSigningKeyToSomethingSecure12345}
     ports:
       - "7141:80"
     networks:
@@ -162,6 +163,7 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      Jwt__Key: ${JWT_KEY:-ChangeThisIdentityJwtSigningKeyToSomethingSecure12345}
     ports:
       - "7142:80"
     networks:
@@ -197,6 +199,7 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      Jwt__Key: ${JWT_KEY:-ChangeThisIdentityJwtSigningKeyToSomethingSecure12345}
       ServiceUrls__AssessmentService: "http://assessment-service"
       ServiceUrls__ResultService: "http://result-service"
     ports:
@@ -230,6 +233,7 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      Jwt__Key: ${JWT_KEY:-ChangeThisIdentityJwtSigningKeyToSomethingSecure12345}
       ServiceUrls__AnswerService: "http://answer-service"
       ServiceUrls__AssessmentService: "http://assessment-service"
     ports:
@@ -290,7 +294,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/health"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -1,0 +1,89 @@
+{
+  "executedAtUtc": "2026-05-08T17:39:53.058Z",
+  "frontendUrl": "http://localhost:4200",
+  "apiUrl": "http://localhost:7080",
+  "checks": [
+    {
+      "status": "PASS",
+      "name": "Admin registration and redirect",
+      "details": "admin.ui.1778261978907@example.com"
+    },
+    {
+      "status": "PASS",
+      "name": "Candidate registration and redirect",
+      "details": "candidate.ui.1778261978907@example.com"
+    },
+    {
+      "status": "PASS",
+      "name": "Admin candidates page loads",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "name": "Candidate record can be created from admin UI",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "name": "Admin assessments page loads",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "name": "Create Assessment button renders a page",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "name": "Assessment and question setup completed through API workaround",
+      "details": "QA Browser Assessment 1778261978907"
+    },
+    {
+      "status": "PASS",
+      "name": "Admin assignments page loads",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "name": "Assignment appears after API fallback setup",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "name": "Admin monitoring page loads",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "name": "Candidate login succeeds in browser",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "name": "Candidate can open assigned assessment",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "name": "Candidate can submit assessment and see result summary",
+      "details": ""
+    },
+    {
+      "status": "PASS",
+      "name": "Admin analytics page reflects submitted result",
+      "details": ""
+    }
+  ],
+  "findings": [
+    {
+      "severity": "high",
+      "title": "Assignment UI does not expose assessments to assign",
+      "details": "The admin assignment form loads, but the assessment dropdown omits the newly created assessment, so assignments cannot be completed from the browser UI."
+    },
+    {
+      "severity": "medium",
+      "title": "Logout button does not log the user out",
+      "details": "Clicking the admin sidebar logout button leaves portal.auth.user in localStorage and does not navigate away from the protected area."
+    }
+  ]
+}

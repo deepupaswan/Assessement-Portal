@@ -1,18 +1,17 @@
+using CandidateService.Application.Repositories;
 using CandidateService.Application.Services;
 using CandidateService.Domain.Entities;
-using CandidateService.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace CandidateService.Infrastructure.Services;
 
 public class CandidateService : ICandidateService
 {
-    private readonly CandidateDbContext _context;
+    private readonly ICandidateRepository _repository;
     private readonly ICandidateSearchService _candidateSearchService;
 
-    public CandidateService(CandidateDbContext context, ICandidateSearchService candidateSearchService)
+    public CandidateService(ICandidateRepository repository, ICandidateSearchService candidateSearchService)
     {
-        _context = context;
+        _repository = repository;
         _candidateSearchService = candidateSearchService;
     }
 
@@ -26,8 +25,8 @@ public class CandidateService : ICandidateService
             CreatedAt = DateTime.UtcNow
         };
 
-        _context.Candidates.Add(candidate);
-        await _context.SaveChangesAsync();
+        await _repository.AddAsync(candidate);
+        await _repository.SaveChangesAsync();
         await _candidateSearchService.IndexCandidateAsync(candidate);
 
         return candidate;
@@ -35,23 +34,24 @@ public class CandidateService : ICandidateService
 
     public async Task<Candidate?> GetCandidateByIdAsync(Guid id)
     {
-        return await _context.Candidates.FirstOrDefaultAsync(c => c.Id == id);
+        return await _repository.GetByIdAsync(id);
     }
 
     public async Task<Candidate?> GetCandidateByEmailAsync(string email)
     {
-        var normalizedEmail = email.Trim().ToLowerInvariant();
-        return await _context.Candidates.FirstOrDefaultAsync(c => c.Email.ToLower() == normalizedEmail);
+        // Normalize email once - database has case-insensitive index
+        var normalizedEmail = email?.Trim().ToLowerInvariant() ?? "";
+        return await _repository.GetByEmailAsync(normalizedEmail);
     }
 
     public async Task<IEnumerable<Candidate>> GetAllCandidatesAsync()
     {
-        return await _context.Candidates.ToListAsync();
+        return await _repository.GetAllAsync();
     }
 
     public async Task<bool> UpdateCandidateAsync(Guid id, string name, string email)
     {
-        var candidate = await _context.Candidates.FirstOrDefaultAsync(c => c.Id == id);
+        var candidate = await _repository.GetByIdAsync(id);
         if (candidate == null)
             return false;
 
@@ -59,19 +59,19 @@ public class CandidateService : ICandidateService
         candidate.Email = email;
         candidate.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        _repository.Update(candidate);
+        await _repository.SaveChangesAsync();
         await _candidateSearchService.IndexCandidateAsync(candidate);
         return true;
     }
 
     public async Task<bool> DeleteCandidateAsync(Guid id)
     {
-        var candidate = await _context.Candidates.FirstOrDefaultAsync(c => c.Id == id);
-        if (candidate == null)
+        var deleted = await _repository.DeleteAsync(id);
+        if (!deleted)
             return false;
 
-        _context.Candidates.Remove(candidate);
-        await _context.SaveChangesAsync();
+        await _repository.SaveChangesAsync();
         await _candidateSearchService.DeleteCandidateAsync(id);
         return true;
     }
