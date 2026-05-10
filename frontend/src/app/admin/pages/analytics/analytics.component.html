@@ -210,35 +210,17 @@
         </div>
 
         <div class="table-wrap" *ngIf="recentResults.length > 0; else noResults">
-          <table class="results-table">
-            <thead>
-              <tr>
-                <th>Candidate</th>
-                <th>Assessment</th>
-                <th>Score</th>
-                <th>Outcome</th>
-                <th>Completed</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let result of recentResults; trackBy: trackByResult">
-                <td>
-                  <div class="cell-stack">
-                    <strong>{{ result.candidateName }}</strong>
-                    <small>{{ result.candidateEmail }}</small>
-                  </div>
-                </td>
-                <td>{{ result.assessmentTitle }}</td>
-                <td>{{ result.score }} / {{ result.maxScore }} <small>({{ result.percentage | number: '1.0-1' }}%)</small></td>
-                <td>
-                  <span class="result-pill" [class.pass]="result.isPassed" [class.fail]="!result.isPassed">
-                    {{ result.isPassed ? 'Passed' : 'Failed' }}
-                  </span>
-                </td>
-                <td>{{ result.completedAt | date: 'MMM d, y h:mm a' }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <ag-grid-angular
+            class="ag-theme-quartz ag-grid-host"
+            [rowData]="recentResults"
+            [columnDefs]="resultColumnDefs"
+            [defaultColDef]="defaultColDef"
+            [animateRows]="true"
+            [pagination]="true"
+            [paginationPageSize]="10"
+            [suppressRowClickSelection]="true"
+            (cellClicked)="onResultCellClicked($event)">
+          </ag-grid-angular>
         </div>
 
         <ng-template #noResults>

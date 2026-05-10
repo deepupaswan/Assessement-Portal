@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { CellClickedEvent, ColDef, ICellRendererParams } from 'ag-grid-community';
 import { AssessmentApiService } from '../../../core/services/assessment-api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { AssessmentSummary } from '../../../core/models/assessment.models';
@@ -21,6 +22,72 @@ import {
 })
 export class AssessmentsComponent implements OnInit, OnDestroy {
   assessments: AssessmentRow[] = [];
+  assessmentColumnDefs: ColDef<AssessmentRow>[] = [
+    {
+      field: 'title',
+      headerName: 'Title',
+      flex: 1.25,
+      minWidth: 220,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<AssessmentRow, string>) => `<button type="button" class="assessment-link ag-action-btn" data-action="view">${params.value ?? ''}</button>`
+    },
+    { field: 'description', headerName: 'Description', flex: 1.5, minWidth: 220, sortable: true, filter: true },
+    {
+      field: 'questionCount',
+      headerName: 'Questions',
+      minWidth: 120,
+      sortable: true,
+      filter: true,
+      type: 'numericColumn'
+    },
+    {
+      field: 'durationMinutes',
+      headerName: 'Duration',
+      minWidth: 120,
+      sortable: true,
+      filter: true,
+      valueFormatter: params => params.value ? `${params.value} min` : '-'
+    },
+    {
+      field: 'isActive',
+      headerName: 'Status',
+      minWidth: 120,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<AssessmentRow, boolean | undefined>) => `<span class="badge ${params.value ? 'badge-success' : 'badge-gray'}">${params.value ? 'Active' : 'Inactive'}</span>`
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Created',
+      minWidth: 150,
+      sortable: true,
+      filter: true,
+      valueFormatter: params => params.value ? new Date(params.value as string).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'
+    },
+    {
+      headerName: 'Actions',
+      minWidth: 180,
+      sortable: false,
+      filter: false,
+      cellRenderer: (params: ICellRendererParams<AssessmentRow>) => {
+        const assessment = params.data;
+        return `
+          <div class="ag-row-actions">
+            <button type="button" class="ag-action-btn" data-action="edit">Edit</button>
+            <button type="button" class="ag-action-btn" data-action="clone">Clone</button>
+            <button type="button" class="ag-action-btn danger" data-action="delete" ${assessment?.isDeleting ? 'disabled' : ''}>Delete</button>
+          </div>
+        `;
+      }
+    }
+  ];
+  defaultColDef: ColDef = {
+    resizable: true,
+    sortable: true,
+    filter: true,
+    floatingFilter: false
+  };
   loading = true;
   error: string | null = null;
   searchTerm = '';
@@ -97,6 +164,33 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
     });
 
     return filtered;
+  }
+
+  onAssessmentCellClicked(event: CellClickedEvent<AssessmentRow>): void {
+    const actionElement = (event.event?.target as HTMLElement | null)?.closest('[data-action]');
+    const action = actionElement?.getAttribute('data-action');
+    if (!action || !event.data) {
+      return;
+    }
+
+    if (action === 'view') {
+      this.viewDetails(event.data.id);
+      return;
+    }
+
+    if (action === 'edit') {
+      this.editAssessment(event.data.id);
+      return;
+    }
+
+    if (action === 'clone') {
+      this.cloneAssessment(event.data);
+      return;
+    }
+
+    if (action === 'delete') {
+      this.deleteAssessment(event.data);
+    }
   }
 
   createAssessment(): void {

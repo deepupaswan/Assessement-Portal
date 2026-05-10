@@ -4,6 +4,7 @@ public class QuestionDto
 {
     public Guid Id { get; set; }
     public Guid AssessmentId { get; set; }
+    public string? AssessmentTitle { get; set; }
     public string Text { get; set; } = string.Empty;
     public string Type { get; set; } = "MCQ";
     public int MaxScore { get; set; }

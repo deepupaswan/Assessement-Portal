@@ -56,59 +56,17 @@
       </div>
 
       <div class="table-wrap" *ngIf="!loading && sessions.length > 0">
-        <table class="sessions-table">
-          <thead>
-            <tr>
-              <th>Candidate</th>
-              <th>Assessment</th>
-              <th>Status</th>
-              <th>Progress</th>
-              <th>Suspicious</th>
-              <th>Remaining</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              *ngFor="let session of sessions; trackBy: trackBySession"
-              (click)="selectSession(session.candidateAssessmentId)"
-              [class.selected]="session.candidateAssessmentId === selectedSessionId">
-              <td>
-                <div class="primary-cell">
-                  <span class="name">{{ session.candidateName }}</span>
-                  <small>{{ session.candidateEmail || 'Email unavailable' }}</small>
-                </div>
-              </td>
-              <td>
-                <div class="primary-cell">
-                  <span class="name">{{ session.assessmentTitle }}</span>
-                  <small *ngIf="session.startedAtUtc">Started {{ session.startedAtUtc | date: 'MMM d, y h:mm a' }}</small>
-                  <small *ngIf="!session.startedAtUtc && session.scheduledAtUtc">
-                    Scheduled {{ session.scheduledAtUtc | date: 'MMM d, y h:mm a' }}
-                  </small>
-                </div>
-              </td>
-              <td>
-                <span class="status-badge" [ngClass]="'status-' + session.status.toLowerCase()">
-                  {{ session.status }}
-                </span>
-              </td>
-              <td>
-                <div class="progress-cell">
-                  <div class="progress-bar">
-                    <span [style.width.%]="session.completionPercent"></span>
-                  </div>
-                  <strong>{{ session.completionPercent }}%</strong>
-                </div>
-              </td>
-              <td>
-                <span class="risk-count" [class.alert]="session.suspiciousEvents > 0">
-                  {{ session.suspiciousEvents }}
-                </span>
-              </td>
-              <td>{{ formatRemaining(session.remainingSeconds) }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <ag-grid-angular
+          class="ag-theme-quartz ag-grid-host"
+          [rowData]="sessions"
+          [columnDefs]="sessionColumnDefs"
+          [defaultColDef]="defaultColDef"
+          [animateRows]="true"
+          [pagination]="true"
+          [paginationPageSize]="10"
+          [suppressRowClickSelection]="true"
+          (cellClicked)="onSessionCellClicked($event)">
+        </ag-grid-angular>
       </div>
     </section>
 

@@ -206,24 +206,17 @@
       </form>
 
       <div class="table-responsive mt-3" *ngIf="selectedQuestions.length">
-        <table class="table table-sm align-middle mb-0">
-          <thead>
-            <tr>
-              <th>Prompt</th>
-              <th>Type</th>
-              <th>Marks</th>
-              <th>Options</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let question of selectedQuestions">
-              <td>{{ question.prompt || question.text }}</td>
-              <td>{{ question.questionType || question.type }}</td>
-              <td>{{ question.marks || question.maxScore }}</td>
-              <td>{{ question.options.length }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <ag-grid-angular
+          class="ag-theme-quartz ag-grid-host"
+          [rowData]="selectedQuestions"
+          [columnDefs]="questionColumnDefs"
+          [defaultColDef]="defaultColDef"
+          [animateRows]="true"
+          [pagination]="true"
+          [paginationPageSize]="10"
+          [suppressRowClickSelection]="true"
+          (cellClicked)="onQuestionCellClicked($event)">
+        </ag-grid-angular>
       </div>
     </div>
   </div>
@@ -234,27 +227,17 @@
         <div class="card-body">
           <h5>Live Candidate Progress</h5>
           <div class="table-responsive">
-            <table class="table align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>Candidate</th>
-                  <th>Status</th>
-                  <th>Completion</th>
-                  <th>Suspicious</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of liveProgress">
-                  <td>{{ item.candidateName }}</td>
-                  <td>{{ item.status }}</td>
-                  <td>{{ item.completionPercent }}%</td>
-                  <td>{{ item.suspiciousEvents }}</td>
-                </tr>
-                <tr *ngIf="!liveProgress.length">
-                  <td colspan="4" class="text-secondary">No active candidates currently.</td>
-                </tr>
-              </tbody>
-            </table>
+            <ag-grid-angular
+              class="ag-theme-quartz ag-grid-host"
+              [rowData]="liveProgress"
+              [columnDefs]="progressColumnDefs"
+              [defaultColDef]="defaultColDef"
+              [animateRows]="true"
+              [pagination]="true"
+              [paginationPageSize]="10"
+              [suppressRowClickSelection]="true"
+              (cellClicked)="onProgressCellClicked($event)">
+            </ag-grid-angular>
           </div>
         </div>
       </div>

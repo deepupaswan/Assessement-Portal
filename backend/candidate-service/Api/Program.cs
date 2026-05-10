@@ -1,4 +1,5 @@
 using CandidateService.Api.Middleware;
+using CandidateService.Api.Events;
 using CandidateService.Application.Services;
 using CandidateService.Application.Repositories;
 using CandidateService.Infrastructure.Services;
@@ -129,12 +130,19 @@ var rabbitmqPassword = builder.Configuration["RabbitMQ:Password"] ?? "guest";
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<CandidateRegisteredConsumer>();
+
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host(new Uri($"rabbitmq://{rabbitmqHost}:{rabbitmqPort}"), h =>
         {
             h.Username(rabbitmqUser);
             h.Password(rabbitmqPassword);
+        });
+
+        cfg.ReceiveEndpoint("candidate-registered", e =>
+        {
+            e.ConfigureConsumer<CandidateRegisteredConsumer>(context);
         });
     });
 });

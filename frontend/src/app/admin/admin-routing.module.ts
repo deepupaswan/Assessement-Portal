@@ -4,7 +4,9 @@ import { RouterModule, Routes } from '@angular/router';
 import { AdminLayoutComponent } from './admin-layout/admin-layout.component';
 import { AdminDashboardComponent } from './pages/dashboard/dashboard.component';
 import { AssessmentsComponent } from './pages/assessments/assessments.component';
+import { AssessmentFormComponent } from './pages/assessment-form/assessment-form.component';
 import { QuestionsComponent } from './pages/questions/questions.component';
+import { AllQuestionsComponent } from './pages/all-questions/all-questions.component';
 import { CandidatesComponent } from './pages/candidates/candidates.component';
 import { AssignmentsComponent } from './pages/assignments/assignments.component';
 import { MonitoringComponent } from './pages/monitoring/monitoring.component';
@@ -18,8 +20,10 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: AdminDashboardComponent },
       { path: 'assessments', component: AssessmentsComponent },
+      { path: 'assessments/create', component: AssessmentFormComponent },
+      { path: 'assessments/edit/:id', component: AssessmentFormComponent },
       { path: 'assessments/:id/questions', component: QuestionsComponent },
-      { path: 'questions', component: QuestionsComponent },
+      { path: 'questions', component: AllQuestionsComponent },
       { path: 'questions/:id', component: QuestionsComponent },
       { path: 'candidates', component: CandidatesComponent },
       { path: 'assignments', component: AssignmentsComponent },

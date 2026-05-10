@@ -55,6 +55,17 @@ public class QuestionService : IQuestionService
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<Question>> GetAllQuestionsAsync()
+    {
+        return await _context.Questions
+            .AsNoTracking()
+            .Include(q => q.Assessment)
+            .Include(q => q.Options.OrderBy(o => o.Order))
+            .OrderBy(q => q.Assessment!.Title)
+            .ThenBy(q => q.Order)
+            .ToListAsync();
+    }
+
     public async Task<bool> UpdateQuestionAsync(Guid id, string text, string type, int maxScore, string? correctAnswer, bool isRequired, int order)
     {
         var question = await _context.Questions.FirstOrDefaultAsync(q => q.Id == id);

@@ -9,6 +9,10 @@ import {
   CreateQuestionRequest
 } from '../models/assessment.models';
 
+export interface GlobalQuestionItem extends AssessmentQuestion {
+  assessmentTitle: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AssessmentApiService {
   constructor(private http: HttpClient) {}
@@ -39,6 +43,10 @@ export class AssessmentApiService {
 
   listQuestions(assessmentId: string): Observable<AssessmentQuestion[]> {
     return this.http.get<AssessmentQuestion[]>(`/api/assessments/${assessmentId}/questions`);
+  }
+
+  listAllQuestions(): Observable<GlobalQuestionItem[]> {
+    return this.http.get<GlobalQuestionItem[]>('/api/questions');
   }
 
   createQuestion(assessmentId: string, payload: CreateQuestionRequest): Observable<AssessmentQuestion> {

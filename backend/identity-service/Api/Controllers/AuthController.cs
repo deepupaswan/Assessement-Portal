@@ -1,6 +1,8 @@
 using IdentityService.Application.DTOs;
 using IdentityService.Application.Services;
+using IdentityService.Api.Events;
 using IdentityService.Domain.Entities;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
@@ -16,15 +18,18 @@ namespace IdentityService.Api.Controllers
     {
         private readonly IUserService _userService;
         private readonly IJwtService _jwtService;
+        private readonly IPublishEndpoint _publishEndpoint;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             IUserService userService,
             IJwtService jwtService,
+            IPublishEndpoint publishEndpoint,
             ILogger<AuthController> logger)
         {
             _userService = userService;
             _jwtService = jwtService;
+            _publishEndpoint = publishEndpoint;
             _logger = logger;
         }
 
@@ -51,6 +56,17 @@ namespace IdentityService.Api.Controllers
                     request.Email,
                     request.Password,
                     request.Role);
+
+                if (string.Equals(user.Role, "Candidate", StringComparison.OrdinalIgnoreCase))
+                {
+                    await _publishEndpoint.Publish(new CandidateRegisteredEvent
+                    {
+                        UserId = user.Id,
+                        Name = user.Name,
+                        Email = user.Email,
+                        RegisteredAtUtc = user.RegisteredAt
+                    });
+                }
 
                 var token = _jwtService.GenerateToken(user);
                 _logger.LogInformation("User registered successfully: {Email}", request.Email);

@@ -18,6 +18,35 @@ public class QuestionsController : ControllerBase
         _questionService = questionService;
     }
 
+    [HttpGet("~/api/questions")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllQuestions()
+    {
+        var questions = await _questionService.GetAllQuestionsAsync();
+        var dtos = questions.Select(q => new QuestionDto
+        {
+            Id = q.Id,
+            AssessmentId = q.AssessmentId,
+            AssessmentTitle = q.Assessment?.Title,
+            Text = q.Text,
+            Type = q.Type,
+            MaxScore = q.MaxScore,
+            CorrectAnswer = q.CorrectAnswer,
+            IsRequired = q.IsRequired,
+            Order = q.Order,
+            CreatedAt = q.CreatedAt,
+            Options = q.Options.Select(o => new QuestionOptionDto
+            {
+                Id = o.Id,
+                Text = o.Text,
+                IsCorrect = o.IsCorrect,
+                Order = o.Order
+            }).ToList()
+        }).ToList();
+
+        return Ok(dtos);
+    }
+
     [HttpGet]
     [Authorize(Roles = "Admin,Candidate")]
     public async Task<IActionResult> GetQuestions(Guid assessmentId)

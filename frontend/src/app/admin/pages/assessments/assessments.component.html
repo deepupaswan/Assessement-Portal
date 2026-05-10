@@ -99,92 +99,17 @@
     </div>
 
     <div *ngIf="!loading && filteredAssessments.length > 0" class="table-wrapper">
-      <table class="assessments-table">
-        <thead>
-          <tr>
-            <th>
-              <button type="button" class="sort-header" (click)="changeSortBy('title')">
-                <span>Title</span>
-                <i class="icon" *ngIf="sortBy === 'title'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
-              </button>
-            </th>
-            <th>Description</th>
-            <th class="text-center">
-              <button type="button" class="sort-header" (click)="changeSortBy('questions')">
-                <span>Questions</span>
-                <i class="icon" *ngIf="sortBy === 'questions'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
-              </button>
-            </th>
-            <th class="text-center">Duration</th>
-            <th class="text-center">Status</th>
-            <th class="text-center">
-              <button type="button" class="sort-header" (click)="changeSortBy('date')">
-                <span>Created</span>
-                <i class="icon" *ngIf="sortBy === 'date'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
-              </button>
-            </th>
-            <th class="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let assessment of filteredAssessments" [class.deleting]="assessment.isDeleting">
-            <td class="title-cell">
-              <button type="button" (click)="viewDetails(assessment.id)" class="assessment-link">
-                {{ assessment.title }}
-              </button>
-            </td>
-            <td class="description-cell">
-              <span class="truncate">{{ assessment.description || '-' }}</span>
-            </td>
-            <td class="center">
-              <span class="badge badge-info">{{ assessment.questionCount || 0 }} Q</span>
-            </td>
-            <td class="center">
-              {{ assessment.durationMinutes ? (assessment.durationMinutes + ' min') : '-' }}
-            </td>
-            <td class="center">
-              <span [class]="'badge ' + getStatusBadgeClass(assessment.isActive)">
-                {{ getStatusText(assessment.isActive) }}
-              </span>
-            </td>
-            <td class="center">
-              {{ formatDate(assessment.createdAt) }}
-            </td>
-            <td class="text-right">
-              <div class="action-buttons">
-                <button
-                  type="button"
-                  class="btn-icon"
-                  (click)="editAssessment(assessment.id)"
-                  title="Edit assessment"
-                  [disabled]="assessment.isDeleting"
-                >
-                  <i class="icon icon-edit"></i>
-                </button>
-                <button
-                  type="button"
-                  class="btn-icon"
-                  (click)="cloneAssessment(assessment)"
-                  title="Clone assessment"
-                  [disabled]="assessment.isDeleting"
-                >
-                  <i class="icon icon-copy"></i>
-                </button>
-                <button
-                  type="button"
-                  class="btn-icon btn-danger"
-                  (click)="deleteAssessment(assessment)"
-                  title="Delete assessment"
-                  [disabled]="assessment.isDeleting"
-                >
-                  <i class="icon icon-trash" *ngIf="!assessment.isDeleting"></i>
-                  <i class="icon icon-loader" *ngIf="assessment.isDeleting"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <ag-grid-angular
+        class="ag-theme-quartz ag-grid-host"
+        [rowData]="filteredAssessments"
+        [columnDefs]="assessmentColumnDefs"
+        [defaultColDef]="defaultColDef"
+        [animateRows]="true"
+        [pagination]="true"
+        [paginationPageSize]="10"
+        [suppressRowClickSelection]="true"
+        (cellClicked)="onAssessmentCellClicked($event)">
+      </ag-grid-angular>
     </div>
   </div>
 </div>

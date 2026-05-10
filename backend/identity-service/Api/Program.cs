@@ -1,5 +1,6 @@
 using IdentityService.Api.Controllers;
 using IdentityService.Api.Middleware;
+using MassTransit;
 using IdentityService.Infrastructure;
 using IdentityService.Infrastructure.Persistence;
 using FluentValidation;
@@ -94,6 +95,24 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();
+    });
+});
+
+// Configure MassTransit with RabbitMQ for cross-service domain events.
+var rabbitmqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+var rabbitmqPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");
+var rabbitmqUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+var rabbitmqPassword = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(new Uri($"rabbitmq://{rabbitmqHost}:{rabbitmqPort}"), h =>
+        {
+            h.Username(rabbitmqUser);
+            h.Password(rabbitmqPassword);
+        });
     });
 });
 

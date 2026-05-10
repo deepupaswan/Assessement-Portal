@@ -1,0 +1,83 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-top">
+      <div>
+        <h1>{{ isEditMode ? 'Edit Assessment' : 'Create Assessment' }}</h1>
+        <p class="page-subtitle">
+          {{ isEditMode ? 'Update assessment details' : 'Create assessment details before adding questions' }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">
+    <i class="icon icon-alert-circle"></i>
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <p>Loading assessment...</p>
+  </div>
+
+  <form *ngIf="!loading" class="form-card" (ngSubmit)="submit()">
+    <div class="form-group">
+      <label for="assessment-title">Title *</label>
+      <input
+        id="assessment-title"
+        type="text"
+        [(ngModel)]="form.title"
+        name="title"
+        required
+        maxlength="120"
+        class="form-control"
+        placeholder="Enter assessment title"
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="assessment-description">Description</label>
+      <textarea
+        id="assessment-description"
+        [(ngModel)]="form.description"
+        name="description"
+        rows="4"
+        class="form-control"
+        placeholder="Describe the assessment"
+      ></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="assessment-duration">Duration (minutes) *</label>
+        <input
+          id="assessment-duration"
+          type="number"
+          [(ngModel)]="form.durationMinutes"
+          name="durationMinutes"
+          required
+          min="1"
+          class="form-control"
+        >
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label" for="assessment-randomize">
+          <input
+            id="assessment-randomize"
+            type="checkbox"
+            [(ngModel)]="form.randomizeQuestions"
+            name="randomizeQuestions"
+          >
+          Randomize questions
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="submitting">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="submitting">
+        {{ submitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Create Assessment') }}
+      </button>
+    </div>
+  </form>
+</div>

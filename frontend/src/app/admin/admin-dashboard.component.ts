@@ -13,6 +13,7 @@ import { SignalRService } from '../core/services/signalr.service';
 import { environment } from '../../environments/environment';
 import { RecentResultView } from './models/admin-dashboard.models';
 import { AdminDashboardMessages } from '../constants/admin-dashboard.constants';
+import { CellClickedEvent, ColDef, ICellRendererParams } from 'ag-grid-community';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -25,6 +26,30 @@ export class AdminDashboardComponent implements OnDestroy {
   liveProgress: AssessmentProgress[] = [];
   results: RecentResultView[] = [];
   selectedQuestions: AssessmentQuestion[] = [];
+  questionColumnDefs: ColDef<AssessmentQuestion>[] = [
+    { field: 'prompt', headerName: 'Prompt', flex: 1.6, minWidth: 220, sortable: true, filter: true },
+    { field: 'questionType', headerName: 'Type', minWidth: 140, sortable: true, filter: true },
+    { field: 'marks', headerName: 'Marks', minWidth: 110, sortable: true, filter: false, type: 'numericColumn' },
+    {
+      headerName: 'Options',
+      minWidth: 110,
+      sortable: false,
+      filter: false,
+      valueGetter: params => params.data?.options?.length ?? 0
+    }
+  ];
+  progressColumnDefs: ColDef<AssessmentProgress>[] = [
+    { field: 'candidateName', headerName: 'Candidate', flex: 1.3, minWidth: 180, sortable: true, filter: true },
+    { field: 'status', headerName: 'Status', minWidth: 130, sortable: true, filter: true },
+    { field: 'completionPercent', headerName: 'Completion', minWidth: 140, sortable: true, filter: false, valueFormatter: params => `${params.value ?? 0}%` },
+    { field: 'suspiciousEvents', headerName: 'Suspicious', minWidth: 120, sortable: true, filter: false, type: 'numericColumn' }
+  ];
+  defaultColDef: ColDef = {
+    resizable: true,
+    sortable: true,
+    filter: true,
+    floatingFilter: false
+  };
   analytics: AnalyticsOverview | null = null;
   loading = false;
   error: string | null = null;
@@ -87,6 +112,14 @@ export class AdminDashboardComponent implements OnDestroy {
 
   get isMcqQuestion(): boolean {
     return this.questionForm.controls.type.value === QuestionTypeValues.Mcq;
+  }
+
+  onQuestionCellClicked(_event: CellClickedEvent<AssessmentQuestion>): void {
+    return;
+  }
+
+  onProgressCellClicked(_event: CellClickedEvent<AssessmentProgress>): void {
+    return;
   }
 
   get filteredCandidates(): Candidate[] {

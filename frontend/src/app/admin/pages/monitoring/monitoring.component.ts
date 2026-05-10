@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { CellClickedEvent, ColDef, ICellRendererParams } from 'ag-grid-community';
 import { MonitoringAlert, MonitoringSession } from './monitoring.models';
 import { MonitoringStateService } from './monitoring-state.service';
 import { MonitoringConnectionLabels } from '../../../constants/monitoring.constants';
@@ -15,6 +16,81 @@ import { MonitoringConnectionLabels } from '../../../constants/monitoring.consta
 export class MonitoringComponent implements OnInit, OnDestroy {
   sessions: MonitoringSession[] = [];
   alerts: MonitoringAlert[] = [];
+  sessionColumnDefs: ColDef<MonitoringSession>[] = [
+    {
+      field: 'candidateName',
+      headerName: 'Candidate',
+      flex: 1.2,
+      minWidth: 190,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<MonitoringSession, string>) => `
+        <div class="primary-cell">
+          <span class="name">${params.value ?? ''}</span>
+          <small>${params.data?.candidateEmail || 'Email unavailable'}</small>
+        </div>
+      `
+    },
+    {
+      field: 'assessmentTitle',
+      headerName: 'Assessment',
+      flex: 1.3,
+      minWidth: 220,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<MonitoringSession, string>) => `
+        <div class="primary-cell">
+          <span class="name">${params.value ?? ''}</span>
+          <small>${params.data?.startedAtUtc ? 'Started ' + new Date(params.data.startedAtUtc).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : params.data?.scheduledAtUtc ? 'Scheduled ' + new Date(params.data.scheduledAtUtc).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</small>
+        </div>
+      `
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      minWidth: 130,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<MonitoringSession, string>) => `<span class="status-badge status-${String(params.value ?? '').toLowerCase()}">${params.value ?? ''}</span>`
+    },
+    {
+      field: 'completionPercent',
+      headerName: 'Progress',
+      minWidth: 150,
+      sortable: true,
+      filter: false,
+      cellRenderer: (params: ICellRendererParams<MonitoringSession, number>) => `
+        <div class="progress-cell">
+          <div class="progress-bar">
+            <span style="width: ${params.value ?? 0}%"></span>
+          </div>
+          <strong>${params.value ?? 0}%</strong>
+        </div>
+      `
+    },
+    {
+      field: 'suspiciousEvents',
+      headerName: 'Suspicious',
+      minWidth: 120,
+      sortable: true,
+      filter: false,
+      cellRenderer: (params: ICellRendererParams<MonitoringSession, number>) => `<span class="risk-count${(params.value ?? 0) > 0 ? ' alert' : ''}">${params.value ?? 0}</span>`
+    },
+    {
+      field: 'remainingSeconds',
+      headerName: 'Remaining',
+      minWidth: 140,
+      sortable: true,
+      filter: false,
+      valueFormatter: params => this.formatRemaining(Number(params.value ?? 0))
+    }
+  ];
+  defaultColDef: ColDef = {
+    resizable: true,
+    sortable: true,
+    filter: true,
+    floatingFilter: false
+  };
   loading = true;
   error: string | null = null;
   connectionState = 'disconnected';
@@ -98,6 +174,14 @@ export class MonitoringComponent implements OnInit, OnDestroy {
 
   refresh(): void {
     this.monitoringState.refresh();
+  }
+
+  onSessionCellClicked(event: CellClickedEvent<MonitoringSession>): void {
+    if (!event.data) {
+      return;
+    }
+
+    this.selectSession(event.data.candidateAssessmentId);
   }
 
   selectSession(candidateAssessmentId: string): void {

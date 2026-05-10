@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { CellClickedEvent, ColDef, ICellRendererParams } from 'ag-grid-community';
 import { Candidate } from '../../../core/models/candidate.models';
 import { Assessment } from '../../../core/models/assessment.models';
 import { CandidateApiService } from '../../../core/services/candidate-api.service';
@@ -22,6 +23,45 @@ import {
 })
 export class CandidatesComponent implements OnInit, OnDestroy {
   candidates: CandidateRow[] = [];
+  candidateColumnDefs: ColDef<CandidateRow>[] = [
+    { field: 'name', headerName: 'Name', flex: 1.2, minWidth: 180, sortable: true, filter: true },
+    { field: 'email', headerName: 'Email', flex: 1.4, minWidth: 220, sortable: true, filter: true },
+    {
+      field: 'status',
+      headerName: 'Status',
+      minWidth: 120,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<CandidateRow, string>) => `<span class="badge badge-success">${params.value ?? ''}</span>`
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Registered',
+      minWidth: 160,
+      sortable: true,
+      filter: true,
+      valueFormatter: params => params.value ? new Date(params.value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'
+    },
+    {
+      headerName: 'Actions',
+      minWidth: 190,
+      sortable: false,
+      filter: false,
+      cellRenderer: (_params: ICellRendererParams<CandidateRow>) => `
+        <div class="ag-row-actions">
+          <button type="button" class="ag-action-btn" data-action="assign">Assign</button>
+          <button type="button" class="ag-action-btn" data-action="edit">Edit</button>
+          <button type="button" class="ag-action-btn danger" data-action="delete">Delete</button>
+        </div>
+      `
+    }
+  ];
+  defaultColDef: ColDef = {
+    resizable: true,
+    sortable: true,
+    filter: true,
+    floatingFilter: false
+  };
   loading = true;
   error: string | null = null;
   searchTerm = '';
@@ -90,10 +130,32 @@ export class CandidatesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data: Assessment[]) => {
-          this.assessments = data.filter((a: Assessment) => a.isActive);
+          this.assessments = data.filter((a: Assessment) => (a.isActive ?? a.isPublished) === true);
         },
         error: (err: any) => console.error(CandidateMessages.LoadAssessmentsError, err)
       });
+  }
+
+  onCandidateCellClicked(event: CellClickedEvent<CandidateRow>): void {
+    const actionElement = (event.event?.target as HTMLElement | null)?.closest('[data-action]');
+    const action = actionElement?.getAttribute('data-action');
+    if (!action || !event.data) {
+      return;
+    }
+
+    if (action === 'assign') {
+      this.openAssignForm(event.data);
+      return;
+    }
+
+    if (action === 'edit') {
+      this.editCandidate(event.data);
+      return;
+    }
+
+    if (action === 'delete') {
+      this.deleteCandidate(event.data);
+    }
   }
 
   get filteredCandidates(): CandidateRow[] {

@@ -6,6 +6,7 @@ import { AssessmentApiService } from '../../../core/services/assessment-api.serv
 import { NotificationService } from '../../../core/services/notification.service';
 import { AssessmentDetail } from '../../../core/models/assessment.models';
 import { QuestionType, QuestionTypeValues, QuestionTypeLabels } from '../../../constants/assessment.constants';
+import { AssessmentRoutes } from '../../../constants/assessments.constants';
 import { QuestionForm, QuestionRow } from './questions.models';
 import { QuestionsMessages } from '../../../constants/questions.constants';
 
@@ -238,6 +239,14 @@ export class QuestionsComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/admin/assessments']);
+  }
+
+  editAssessment(): void {
+    if (!this.assessmentId) {
+      return;
+    }
+
+    this.router.navigate([AssessmentRoutes.Edit(this.assessmentId)]);
   }
 
   addMCQOption(): void {

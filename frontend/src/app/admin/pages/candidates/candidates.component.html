@@ -215,53 +215,17 @@
       </div>
 
       <div class="table-card" *ngIf="!loading && filteredCandidates.length > 0">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>
-                <button type="button" class="sort-header" (click)="changeSortBy('name')">
-                  <span>Name</span>
-                  <i class="icon" *ngIf="sortBy === 'name'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
-                </button>
-              </th>
-              <th>
-                <button type="button" class="sort-header" (click)="changeSortBy('email')">
-                  <span>Email</span>
-                  <i class="icon" *ngIf="sortBy === 'email'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
-                </button>
-              </th>
-              <th>Status</th>
-              <th>
-                <button type="button" class="sort-header" (click)="changeSortBy('date')">
-                  <span>Registered</span>
-                  <i class="icon" *ngIf="sortBy === 'date'" [class.icon-chevron-up]="!sortDesc" [class.icon-chevron-down]="sortDesc"></i>
-                </button>
-              </th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let candidate of filteredCandidates">
-              <td class="font-bold">{{ candidate.name }}</td>
-              <td>{{ candidate.email }}</td>
-              <td>
-                <span class="badge badge-success">{{ candidate.status }}</span>
-              </td>
-              <td class="text-muted">{{ candidate.createdAt | date: 'MMM d, y' }}</td>
-              <td class="text-right">
-                <button type="button" class="btn-icon" title="Assign Assessment" (click)="openAssignForm(candidate)">
-                  <i class="icon icon-send"></i>
-                </button>
-                <button type="button" class="btn-icon" title="Edit" (click)="editCandidate(candidate)">
-                  <i class="icon icon-edit"></i>
-                </button>
-                <button type="button" class="btn-icon btn-danger" title="Delete" (click)="deleteCandidate(candidate)">
-                  <i class="icon icon-trash"></i>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <ag-grid-angular
+          class="ag-theme-quartz ag-grid-host"
+          [rowData]="filteredCandidates"
+          [columnDefs]="candidateColumnDefs"
+          [defaultColDef]="defaultColDef"
+          [animateRows]="true"
+          [pagination]="true"
+          [paginationPageSize]="10"
+          [suppressRowClickSelection]="true"
+          (cellClicked)="onCandidateCellClicked($event)">
+        </ag-grid-angular>
       </div>
     </div>
   </div>

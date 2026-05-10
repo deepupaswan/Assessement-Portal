@@ -10,10 +10,16 @@
           <p class="page-subtitle">Manage and organize questions</p>
         </div>
       </div>
-      <button type="button" class="btn btn-primary" (click)="openCreateForm()" title="Add new question" *ngIf="!showForm">
-        <i class="icon icon-plus"></i>
-        <span>Add Question</span>
-      </button>
+      <div class="header-actions">
+        <button type="button" class="btn btn-secondary" (click)="editAssessment()" title="Edit assessment" *ngIf="!showForm && assessmentId">
+          <i class="icon icon-edit"></i>
+          <span>Edit Assessment</span>
+        </button>
+        <button type="button" class="btn btn-primary" (click)="openCreateForm()" title="Add new question" *ngIf="!showForm">
+          <i class="icon icon-plus"></i>
+          <span>Add Question</span>
+        </button>
+      </div>
     </div>
   </div>
 

@@ -28,6 +28,7 @@ export interface QuestionOption {
 
 export interface AssessmentQuestion {
   id: string;
+  assessmentId?: string;
   prompt?: string;
   text?: string;
   questionType?: QuestionType;
@@ -35,12 +36,14 @@ export interface AssessmentQuestion {
   marks?: number;
   maxScore?: number;
   order?: number;
+  createdAt?: string | Date;
   options: QuestionOption[];
 }
 
 export interface AssessmentDetail {
   id: string;
   title: string;
+  description?: string;
   durationMinutes: number;
   randomizeQuestions: boolean;
   questions: AssessmentQuestion[];

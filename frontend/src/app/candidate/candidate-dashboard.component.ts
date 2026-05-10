@@ -5,6 +5,7 @@ import { CandidateAssessmentStatusValues } from '../core/models/candidate.models
 import { CandidateApiService } from '../core/services/candidate-api.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { CellClickedEvent, ColDef, ICellRendererParams } from 'ag-grid-community';
 import { CandidateDashboardMessages } from '../constants/candidate-dashboard.constants';
 
 @Component({
@@ -13,6 +14,50 @@ import { CandidateDashboardMessages } from '../constants/candidate-dashboard.con
 })
 export class CandidateDashboardComponent implements OnDestroy {
   assignments: CandidateAssignment[] = [];
+  assignmentColumnDefs: ColDef<CandidateAssignment>[] = [
+    { field: 'assessmentTitle', headerName: 'Assessment', flex: 1.5, minWidth: 200, sortable: true, filter: true },
+    {
+      field: 'status',
+      headerName: 'Status',
+      minWidth: 130,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<CandidateAssignment, string>) => `<span class="badge text-bg-secondary">${params.value ?? ''}</span>`
+    },
+    {
+      field: 'scheduledAtUtc',
+      headerName: 'Availability',
+      minWidth: 190,
+      sortable: true,
+      filter: true,
+      valueFormatter: params => params.value ? new Date(params.value).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Now'
+    },
+    {
+      field: 'remainingSeconds',
+      headerName: 'Remaining Time',
+      minWidth: 150,
+      sortable: true,
+      filter: false,
+      valueFormatter: params => params.value ? `${Math.max(Math.floor(Number(params.value) / 60), 0)} min` : 'N/A'
+    },
+    {
+      headerName: 'Action',
+      minWidth: 160,
+      sortable: false,
+      filter: false,
+      cellRenderer: (params: ICellRendererParams<CandidateAssignment>) => {
+        const assignment = params.data;
+        const disabled = assignment && !this.canOpenAssignment(assignment) ? 'disabled' : '';
+        return `<button type="button" class="btn btn-primary btn-sm" data-action="open" ${disabled}>${assignment ? this.getActionLabel(assignment) : 'Open'}</button>`;
+      }
+    }
+  ];
+  defaultColDef: ColDef = {
+    resizable: true,
+    sortable: true,
+    filter: true,
+    floatingFilter: false
+  };
   loading = false;
   error: string | null = null;
   private readonly destroy$ = new Subject<void>();
@@ -38,6 +83,17 @@ export class CandidateDashboardComponent implements OnDestroy {
         this.loading = false;
       }
     });
+  }
+
+  onAssignmentCellClicked(event: CellClickedEvent<CandidateAssignment>): void {
+    const actionElement = (event.event?.target as HTMLElement | null)?.closest('[data-action]');
+    if (!actionElement || !event.data) {
+      return;
+    }
+
+    if (actionElement.getAttribute('data-action') === 'open') {
+      this.openAssessment(event.data.candidateAssessmentId);
+    }
   }
 
   ngOnDestroy(): void {

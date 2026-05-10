@@ -237,70 +237,18 @@
         </button>
       </div>
 
-      <table class="data-table" *ngIf="!loading && filteredAssignments.length > 0">
-        <thead>
-          <tr>
-            <th class="sortable" (click)="changeSortBy('candidate')">
-              Candidate
-              <span class="sort-indicator" *ngIf="sortBy === 'candidate'">
-                {{ sortDesc ? 'v' : '^' }}
-              </span>
-            </th>
-            <th class="sortable" (click)="changeSortBy('assessment')">
-              Assessment
-              <span class="sort-indicator" *ngIf="sortBy === 'assessment'">
-                {{ sortDesc ? 'v' : '^' }}
-              </span>
-            </th>
-            <th>Status</th>
-            <th class="sortable" (click)="changeSortBy('date')">
-              Scheduled
-              <span class="sort-indicator" *ngIf="sortBy === 'date'">
-                {{ sortDesc ? 'v' : '^' }}
-              </span>
-            </th>
-            <th class="text-right">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr *ngFor="let assignment of filteredAssignments">
-            <td class="font-bold">{{ assignment.candidateName }}</td>
-            <td>{{ assignment.assessmentTitle }}</td>
-            <td>
-              <span class="badge" [ngClass]="'badge-' + assignment.status.toLowerCase()">
-                {{ assignment.status }}
-              </span>
-            </td>
-            <td class="text-muted">
-              <div class="date-cell">
-                <span>{{ assignment.scheduledAt ? (assignment.scheduledAt | date: 'MMM d, y h:mm a') : 'Immediate' }}</span>
-                <small *ngIf="assignment.createdAt">
-                  Assigned {{ assignment.createdAt | date: 'MMM d, y h:mm a' }}
-                </small>
-              </div>
-            </td>
-            <td class="text-right">
-              <button
-                class="btn-icon"
-                type="button"
-                title="Edit"
-                (click)="editAssignment(assignment)"
-                [disabled]="!canEdit(assignment)">
-                Edit
-              </button>
-              <button
-                class="btn-icon btn-danger"
-                type="button"
-                title="Delete"
-                (click)="deleteAssignment(assignment)"
-                [disabled]="!canDelete(assignment) || isDeleting(assignment.id)">
-                {{ isDeleting(assignment.id) ? '...' : 'Delete' }}
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <ag-grid-angular
+        *ngIf="!loading && filteredAssignments.length > 0"
+        class="ag-theme-quartz ag-grid-host"
+        [rowData]="filteredAssignments"
+        [columnDefs]="assignmentColumnDefs"
+        [defaultColDef]="defaultColDef"
+        [animateRows]="true"
+        [pagination]="true"
+        [paginationPageSize]="10"
+        [suppressRowClickSelection]="true"
+        (cellClicked)="onAssignmentCellClicked($event)">
+      </ag-grid-angular>
     </div>
   </div>
 </div>

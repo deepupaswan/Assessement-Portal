@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject, forkJoin } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
+import { CellClickedEvent, ColDef, ICellRendererParams } from 'ag-grid-community';
 import { Assessment } from '../../../core/models/assessment.models';
 import { Candidate, CandidateAssignment } from '../../../core/models/candidate.models';
 import { AssessmentApiService } from '../../../core/services/assessment-api.service';
@@ -18,6 +19,48 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
   assignments: AssignmentRow[] = [];
   candidates: Candidate[] = [];
   assessments: Assessment[] = [];
+  assignmentColumnDefs: ColDef<AssignmentRow>[] = [
+    { field: 'candidateName', headerName: 'Candidate', flex: 1.2, minWidth: 180, sortable: true, filter: true },
+    { field: 'assessmentTitle', headerName: 'Assessment', flex: 1.3, minWidth: 190, sortable: true, filter: true },
+    {
+      field: 'status',
+      headerName: 'Status',
+      minWidth: 130,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<AssignmentRow, string>) => `<span class="badge badge-${String(params.value ?? '').toLowerCase()}">${params.value ?? ''}</span>`
+    },
+    {
+      field: 'scheduledAt',
+      headerName: 'Scheduled',
+      minWidth: 180,
+      sortable: true,
+      filter: true,
+      valueFormatter: params => params.value ? new Date(params.value).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Immediate'
+    },
+    {
+      headerName: 'Actions',
+      minWidth: 160,
+      sortable: false,
+      filter: false,
+      cellRenderer: (params: ICellRendererParams<AssignmentRow>) => {
+        const data = params.data as AssignmentRow | undefined;
+        const disabled = data && !this.canEdit(data) ? 'disabled' : '';
+        return `
+          <div class="ag-row-actions">
+            <button type="button" class="ag-action-btn" data-action="edit" ${disabled}>Edit</button>
+            <button type="button" class="ag-action-btn danger" data-action="delete" ${disabled}>Delete</button>
+          </div>
+        `;
+      }
+    }
+  ];
+  defaultColDef: ColDef = {
+    resizable: true,
+    sortable: true,
+    filter: true,
+    floatingFilter: false
+  };
 
   loading = true;
   saving = false;
@@ -104,10 +147,31 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data: Assessment[]) => {
-          this.assessments = data.filter((assessment) => assessment.isActive);
+          this.assessments = data.filter((assessment) => (assessment.isActive ?? assessment.isPublished) === true);
         },
         error: (err: any) => console.error(AssignmentsMessages.LoadAssessmentsError, err)
       });
+  }
+
+  onAssignmentCellClicked(event: CellClickedEvent<AssignmentRow>): void {
+    const actionElement = (event.event?.target as HTMLElement | null)?.closest('[data-action]');
+    const action = actionElement?.getAttribute('data-action');
+    if (!action || !event.data) {
+      return;
+    }
+
+    if (!this.canEdit(event.data) && (action === 'edit' || action === 'delete')) {
+      return;
+    }
+
+    if (action === 'edit') {
+      this.editAssignment(event.data);
+      return;
+    }
+
+    if (action === 'delete') {
+      this.deleteAssignment(event.data);
+    }
   }
 
   get filteredAssignments(): AssignmentRow[] {

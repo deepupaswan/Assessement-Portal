@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
+import { CellClickedEvent, ColDef, ICellRendererParams } from 'ag-grid-community';
 import { AssessmentSummary } from '../../../core/models/assessment.models';
 import { Candidate } from '../../../core/models/candidate.models';
 import { AnalyticsOverview, ResultRecord } from '../../../core/models/result.models';
@@ -31,6 +32,56 @@ export class AnalyticsComponent implements OnInit {
   selectedAssessmentId = 'all';
   selectedOutcome: 'all' | 'passed' | 'failed' = 'all';
   searchTerm = '';
+  resultColumnDefs: ColDef<AnalyticsResultView>[] = [
+    {
+      field: 'candidateName',
+      headerName: 'Candidate',
+      flex: 1.2,
+      minWidth: 200,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<AnalyticsResultView, string>) => `
+        <div class="cell-stack">
+          <strong>${params.value ?? ''}</strong>
+          <small>${params.data?.candidateEmail || ''}</small>
+        </div>
+      `
+    },
+    { field: 'assessmentTitle', headerName: 'Assessment', flex: 1.2, minWidth: 180, sortable: true, filter: true },
+    {
+      field: 'score',
+      headerName: 'Score',
+      minWidth: 140,
+      sortable: true,
+      filter: false,
+      valueFormatter: params => {
+        const data = params.data;
+        return data ? `${data.score} / ${data.maxScore} (${data.percentage.toFixed(1)}%)` : '-';
+      }
+    },
+    {
+      field: 'isPassed',
+      headerName: 'Outcome',
+      minWidth: 120,
+      sortable: true,
+      filter: true,
+      cellRenderer: (params: ICellRendererParams<AnalyticsResultView, boolean>) => `<span class="result-pill ${params.value ? 'pass' : 'fail'}">${params.value ? 'Passed' : 'Failed'}</span>`
+    },
+    {
+      field: 'completedAt',
+      headerName: 'Completed',
+      minWidth: 180,
+      sortable: true,
+      filter: true,
+      valueFormatter: params => params.value ? new Date(params.value as string).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-'
+    }
+  ];
+  defaultColDef: ColDef = {
+    resizable: true,
+    sortable: true,
+    filter: true,
+    floatingFilter: false
+  };
 
   constructor(
     private readonly assessmentApi: AssessmentApiService,
@@ -191,6 +242,10 @@ export class AnalyticsComponent implements OnInit {
 
   trackByResult(index: number, result: AnalyticsResultView): string {
     return result.id;
+  }
+
+  onResultCellClicked(_event: CellClickedEvent<AnalyticsResultView>): void {
+    return;
   }
 
   private loadAnalytics(): void {

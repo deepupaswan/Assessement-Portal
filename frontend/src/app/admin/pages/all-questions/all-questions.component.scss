@@ -1,0 +1,61 @@
+.controls-bar {
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.all-questions-search-box {
+  flex: 1 1 360px;
+  min-width: 280px;
+}
+
+.all-questions-search-box .search-input {
+  width: 100%;
+}
+
+.all-questions-filters {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
+.questions-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.question-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.question-cell small {
+  color: #6b7280;
+}
+
+:host ::ng-deep .ag-theme-quartz .ag-cell-value {
+  white-space: normal;
+}
+
+:host ::ng-deep .ag-theme-quartz .ag-row {
+  align-items: stretch;
+}
+
+:host ::ng-deep .ag-theme-quartz .ag-cell {
+  display: flex;
+  align-items: center;
+}
+
+:host ::ng-deep .ag-theme-quartz .ag-header-cell-label {
+  justify-content: flex-start;
+}
+
+:host ::ng-deep .ag-theme-quartz .ag-row .ag-cell[col-id='text'],
+:host ::ng-deep .ag-theme-quartz .ag-row .ag-cell[col-id='assessmentTitle'] {
+  align-items: flex-start;
+}

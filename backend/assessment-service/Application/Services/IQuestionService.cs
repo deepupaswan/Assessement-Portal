@@ -7,6 +7,7 @@ public interface IQuestionService
     Task<Question> CreateQuestionAsync(Guid assessmentId, string text, string type, int maxScore, string? correctAnswer, bool isRequired, int order);
     Task<Question?> GetQuestionByIdAsync(Guid id);
     Task<IEnumerable<Question>> GetQuestionsByAssessmentIdAsync(Guid assessmentId);
+    Task<IEnumerable<Question>> GetAllQuestionsAsync();
     Task<bool> UpdateQuestionAsync(Guid id, string text, string type, int maxScore, string? correctAnswer, bool isRequired, int order);
     Task<bool> DeleteQuestionAsync(Guid id);
     

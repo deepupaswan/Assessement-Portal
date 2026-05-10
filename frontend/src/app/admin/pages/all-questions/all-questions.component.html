@@ -1,0 +1,88 @@
+<div class="page-container">
+  <div class="page-header">
+    <div class="header-top">
+      <div>
+        <h1>All Questions</h1>
+        <p class="page-subtitle">Browse questions across every assessment</p>
+      </div>
+      <button type="button" class="btn btn-outline-primary" (click)="refresh()" [disabled]="loading">Refresh</button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="alert alert-error">
+    <i class="icon icon-alert-circle"></i>
+    <p>{{ error }}</p>
+  </div>
+
+  <div class="controls-bar">
+    <div class="search-box all-questions-search-box">
+      <i class="icon icon-search"></i>
+      <input
+        type="text"
+        placeholder="Search question text or assessment..."
+        [(ngModel)]="searchTerm"
+        class="search-input">
+    </div>
+
+    <div class="filter-tabs all-questions-filters">
+      <button type="button" class="filter-tab" [class.active]="filterType === 'all'" (click)="filterType = 'all'">All</button>
+      <button type="button" class="filter-tab" [class.active]="filterType === 'MCQ'" (click)="filterType = 'MCQ'">MCQ</button>
+      <button type="button" class="filter-tab" [class.active]="filterType === 'DESCRIPTIVE'" (click)="filterType = 'DESCRIPTIVE'">Descriptive</button>
+      <button type="button" class="filter-tab" [class.active]="filterType === 'CODING'" (click)="filterType = 'CODING'">Coding</button>
+      <button type="button" class="filter-tab" (click)="clearFilters()">Clear</button>
+    </div>
+  </div>
+
+  <div class="questions-summary" *ngIf="!loading && filteredQuestions.length > 0">
+    <small class="text-secondary">Showing {{ filteredQuestions.length }} questions</small>
+    <small class="text-secondary">Open/Edit goes to the per-assessment editor; delete acts on the selected question.</small>
+  </div>
+
+  <div class="table-wrapper">
+    <div *ngIf="loading" class="loading-state">
+      <div class="table-skeleton">
+        <div class="skeleton-row header">
+          <div class="skeleton-line long"></div>
+          <div class="skeleton-line medium"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+        <div class="skeleton-row" *ngFor="let item of [1, 2, 3, 4, 5]">
+          <div class="skeleton-line long"></div>
+          <div class="skeleton-line medium"></div>
+          <div class="skeleton-chip"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-actions">
+            <div class="skeleton-circle"></div>
+            <div class="skeleton-circle"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!loading && filteredQuestions.length === 0" class="empty-state">
+      <i class="icon icon-help-circle"></i>
+      <h3>No questions found</h3>
+      <p *ngIf="searchTerm">Try clearing the search or changing the type filter.</p>
+      <p *ngIf="!searchTerm">Questions will appear here once assessments have questions.</p>
+    </div>
+
+    <ag-grid-angular
+      *ngIf="!loading && filteredQuestions.length > 0"
+      class="ag-theme-quartz ag-grid-host"
+      [rowData]="filteredQuestions"
+      [columnDefs]="questionColumnDefs"
+      [defaultColDef]="defaultColDef"
+      [animateRows]="true"
+      [pagination]="true"
+      [paginationPageSize]="10"
+      [suppressRowClickSelection]="true"
+      (cellClicked)="onQuestionCellClicked($event)">
+    </ag-grid-angular>
+  </div>
+</div>
