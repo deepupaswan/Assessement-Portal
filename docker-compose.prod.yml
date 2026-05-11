@@ -10,13 +10,16 @@ x-default-logging: &default-logging
 
 services:
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    # Azure SQL Edge runs in the smaller EC2 instance used for this deployment.
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    user: root
     container_name: sqlserver
     restart: unless-stopped
     environment:
       SA_PASSWORD: ${SQL_SA_PASSWORD}
       ACCEPT_EULA: Y
-      MSSQL_PID: Standard
+      MSSQL_PID: Developer
+      MSSQL_MEMORY_LIMIT_MB: 384
     volumes:
       - sqlserver-data:/var/opt/mssql
     networks:
@@ -27,10 +30,10 @@ services:
           "CMD-SHELL",
           "if [ -x /opt/mssql-tools18/bin/sqlcmd ]; then /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"${SQL_SA_PASSWORD}\" -Q \"SELECT 1\"; else /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P \"${SQL_SA_PASSWORD}\" -Q \"SELECT 1\"; fi"
         ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
+      interval: 15s
+      timeout: 30s
+      retries: 20
+      start_period: 120s
     deploy:
       resources:
         limits:
@@ -75,7 +78,7 @@ services:
       discovery.type: single-node
       xpack.security.enabled: "false"
       xpack.security.enrollment.enabled: "false"
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      ES_JAVA_OPTS: "-Xms256m -Xmx256m"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     networks:
@@ -172,6 +175,7 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Jwt__Key: ${JWT_KEY}
     networks:
       - app-network
     healthcheck:
@@ -208,6 +212,7 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Jwt__Key: ${JWT_KEY}
     networks:
       - app-network
     healthcheck:
@@ -248,6 +253,7 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Jwt__Key: ${JWT_KEY}
     networks:
       - app-network
     healthcheck:
@@ -284,6 +290,7 @@ services:
       RabbitMQ__Port: 5672
       RabbitMQ__Username: ${RABBITMQ_USER}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD}
+      Jwt__Key: ${JWT_KEY}
     networks:
       - app-network
     healthcheck:
@@ -348,13 +355,15 @@ services:
     image: ${REGISTRY}/frontend:${IMAGE_TAG:-latest}
     container_name: frontend
     restart: unless-stopped
+    ports:
+      - "80:80"
     depends_on:
       api-gateway:
         condition: service_healthy
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:80/health"]
       interval: 30s
       timeout: 10s
       retries: 3

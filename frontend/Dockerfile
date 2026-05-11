@@ -18,6 +18,9 @@ RUN npm run build -- --configuration production
 FROM nginx:alpine
 EXPOSE 80
 
+# Remove default nginx config and entrypoint hooks to avoid conflicts
+RUN rm -rf /etc/nginx/conf.d/* && rm -rf /docker-entrypoint.d/*
+
 # Copy Nginx configuration
 COPY frontend/nginx.conf /etc/nginx/nginx.conf
 COPY frontend/nginx-default.conf /etc/nginx/conf.d/default.conf
