@@ -104,6 +104,9 @@ jobs:
               backend/*|Dev.sln|docker-compose.yml|docker-compose.prod.yml|.dockerignore)
                 build_all=true
                 ;;
+              .github/workflows/*)
+                build_all=true
+                ;;
             esac
           done <<< "$CHANGED_FILES"
 
