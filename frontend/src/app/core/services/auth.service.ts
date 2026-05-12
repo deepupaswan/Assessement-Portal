@@ -20,15 +20,7 @@ export class AuthService {
   readonly isAuthenticated$ = this.currentUser$.pipe(map(user => !!user?.token));
 
   constructor(private http: HttpClient) {
-    const persistedUser = localStorage.getItem(this.storageKey);
-    if (persistedUser) {
-      const user = this.tryParseUser(persistedUser);
-      this.userSubject.next(user);
-
-      if (!user) {
-        localStorage.removeItem(this.storageKey);
-      }
-    }
+    this.rehydrateUserFromStorage();
   }
 
   login(email: string, password: string): Observable<AuthUser> {
@@ -59,7 +51,7 @@ export class AuthService {
   }
 
   getUser(): AuthUser | null {
-    const user = this.userSubject.value;
+    const user = this.rehydrateUserFromStorage();
     if (!user || this.isTokenExpired(user.token)) {
       this.logout();
       return null;
@@ -69,7 +61,7 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    const user = this.userSubject.value;
+    const user = this.rehydrateUserFromStorage();
     return !!user?.token && !this.isTokenExpired(user.token);
   }
 
@@ -88,6 +80,27 @@ export class AuthService {
     } catch {
       return null;
     }
+  }
+
+  private rehydrateUserFromStorage(): AuthUser | null {
+    const currentUser = this.userSubject.value;
+    if (currentUser?.token) {
+      return currentUser;
+    }
+
+    const persistedUser = localStorage.getItem(this.storageKey);
+    if (!persistedUser) {
+      return null;
+    }
+
+    const user = this.tryParseUser(persistedUser);
+    if (user) {
+      this.userSubject.next(user);
+      return user;
+    }
+
+    localStorage.removeItem(this.storageKey);
+    return null;
   }
 
   private isTokenExpired(token: string): boolean {
