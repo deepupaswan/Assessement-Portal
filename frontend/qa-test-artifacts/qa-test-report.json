@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-05-12T15:51:20.343Z",
+  "url": "http://3.27.249.101",
+  "summary": {
+    "passed": 4,
+    "failed": 3,
+    "warnings": 4,
+    "total": 11,
+    "successRate": "36.4"
+  },
+  "testResults": [
+    {
+      "status": "PASS",
+      "name": "Application is accessible",
+      "details": "Response: http://3.27.249.101/",
+      "timestamp": "2026-05-12T15:50:56.077Z"
+    },
+    {
+      "status": "FAIL",
+      "name": "Page title unexpected",
+      "details": "Got: \"Frontend\"",
+      "timestamp": "2026-05-12T15:50:56.374Z"
+    },
+    {
+      "status": "FAIL",
+      "name": "Registration link not found",
+      "details": "Cannot locate \"Create account\" link",
+      "timestamp": "2026-05-12T15:50:57.883Z"
+    },
+    {
+      "status": "FAIL",
+      "name": "Login redirect failed",
+      "details": "Expected admin page, got: http://3.27.249.101/auth/login",
+      "timestamp": "2026-05-12T15:51:09.844Z"
+    },
+    {
+      "status": "WARN",
+      "name": "Health endpoint check",
+      "details": "Could not verify",
+      "timestamp": "2026-05-12T15:51:09.883Z"
+    },
+    {
+      "status": "WARN",
+      "name": "Form validation",
+      "details": "Empty email validation unclear",
+      "timestamp": "2026-05-12T15:51:11.746Z"
+    },
+    {
+      "status": "WARN",
+      "name": "Desktop responsiveness",
+      "details": "Layout might be broken",
+      "timestamp": "2026-05-12T15:51:13.252Z"
+    },
+    {
+      "status": "PASS",
+      "name": "Tablet responsiveness",
+      "details": "768x1024",
+      "timestamp": "2026-05-12T15:51:14.724Z"
+    },
+    {
+      "status": "PASS",
+      "name": "Mobile responsiveness",
+      "details": "375x667",
+      "timestamp": "2026-05-12T15:51:16.153Z"
+    },
+    {
+      "status": "PASS",
+      "name": "Page load performance",
+      "details": "2083ms (Excellent)",
+      "timestamp": "2026-05-12T15:51:18.494Z"
+    },
+    {
+      "status": "WARN",
+      "name": "404 error handling",
+      "details": "Page behavior unclear",
+      "timestamp": "2026-05-12T15:51:19.956Z"
+    }
+  ],
+  "issues": []
+}
