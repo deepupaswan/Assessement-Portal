@@ -99,8 +99,10 @@ builder.Services.AddAuthorization();
 // Configure MassTransit with RabbitMQ
 var rabbitmqHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
 var rabbitmqPort = int.Parse(builder.Configuration["RabbitMQ:Port"] ?? "5672");
-var rabbitmqUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
-var rabbitmqPassword = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+var rabbitmqUser = builder.Configuration["RabbitMQ:Username"]
+    ?? throw new InvalidOperationException("RabbitMQ:Username is required.");
+var rabbitmqPassword = builder.Configuration["RabbitMQ:Password"]
+    ?? throw new InvalidOperationException("RabbitMQ:Password is required.");
 
 builder.Services.AddMassTransit(x =>
 {

@@ -87,7 +87,7 @@ try {
     Write-Host "   • Frontend: http://localhost:4200" -ForegroundColor White
     Write-Host "   • API Gateway: http://localhost:7080" -ForegroundColor White
     Write-Host "   • API Gateway Health: http://localhost:7080/health" -ForegroundColor White
-    Write-Host "   • RabbitMQ Management: http://localhost:15672 (guest/guest)" -ForegroundColor White
+    Write-Host "   • RabbitMQ Management: http://localhost:15672" -ForegroundColor White
     Write-Host "   • Identity Service (Health): http://localhost:7140/health" -ForegroundColor White
     Write-Host "   • Answer Service (Health): http://localhost:7141/health" -ForegroundColor White
     Write-Host "   • Assessment Service (Health): http://localhost:7142/health" -ForegroundColor White

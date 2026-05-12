@@ -137,7 +137,7 @@ All 13 containers should show as "Healthy" or "Up"
 ### 1. Database Connectivity
 ```powershell
 # Test SQL Server
-docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P SqlPassword123! -Q "SELECT @@VERSION"
+docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P REPLACE_WITH_STRONG_PASSWORD -Q "SELECT @@VERSION"
 ```
 
 - [ ] SQL Server returns version information
@@ -265,7 +265,7 @@ SQL Server is now ready for client connections
 ### Test Database Migrations
 ```powershell
 # Check tables were created
-docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P SqlPassword123! -Q "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES"
+docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P REPLACE_WITH_STRONG_PASSWORD -Q "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES"
 # Should show tables created by migrations
 ```
 
@@ -378,7 +378,7 @@ docker logs rabbitmq
 ```
 - [ ] Verify RabbitMQ is healthy: `./docker-status.ps1`
 - [ ] Check hostname: should be `rabbitmq` (not `localhost` or `127.0.0.1`)
-- [ ] Verify credentials: guest/guest by default
+- [ ] Verify credentials: set your own RabbitMQ credentials
 
 ---
 

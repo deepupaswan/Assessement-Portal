@@ -790,7 +790,7 @@ public class UpdateAssessmentValidator : AbstractValidator<UpdateAssessmentReque
     "Audience": "AssessmentPortal"
   },
   "ConnectionStrings": {
-    "DefaultConnection": "Server=sql-server;Database=assessment_db;User Id=sa;Password=YourSqlPassword123!;"
+    "DefaultConnection": "Server=sql-server;Database=assessment_db;User Id=sa;Password=REPLACE_WITH_STRONG_PASSWORD;"
   },
   "RabbitMQ": {
     "HostName": "rabbitmq",

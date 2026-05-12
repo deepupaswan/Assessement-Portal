@@ -353,7 +353,7 @@ curl http://localhost:7140/health  # Identity Service
 | **Candidate Service** | 80 | **7143** | Candidates, health: /health |
 | **Result Service** | 80 | **7144** | Results, health: /health |
 | **RabbitMQ (AMQP)** | 5672 | **5672** | Message broker |
-| **RabbitMQ (Mgmt)** | 15672 | **15672** | Web UI (guest/guest) |
+| **RabbitMQ (Mgmt)** | 15672 | **15672** | Web UI (set your own credentials) |
 | **SQL Server** | 1433 | **1433** | Shared database for all services |
 
 ---
@@ -374,7 +374,7 @@ docker exec identity-service curl -s http://api-gateway/health
 
 ### Test 3: Database Connectivity
 ```powershell
-docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P SqlPassword123! -Q "SELECT @@VERSION"
+docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P REPLACE_WITH_STRONG_PASSWORD -Q "SELECT @@VERSION"
 ```
 
 ### Test 4: RabbitMQ

@@ -62,7 +62,7 @@ This starts all containers in the background and waits for services to become he
    • Frontend: http://localhost:4200
    • API Gateway: http://localhost:7080
    • API Gateway Health: http://localhost:7080/health
-   • RabbitMQ Management: http://localhost:15672 (guest/guest)
+  • RabbitMQ Management: http://localhost:15672 (set your own credentials)
    • Identity Service: http://localhost:7140/health
    ...
 ```
@@ -151,7 +151,7 @@ The `.env` file at the project root contains all configuration:
 
 ```env
 # SQL Server credentials (change in production!)
-SQL_SA_PASSWORD=SqlPassword123!
+SQL_SA_PASSWORD=REPLACE_WITH_STRONG_PASSWORD
 
 # RabbitMQ credentials
 RABBITMQ_USER=guest
@@ -211,7 +211,7 @@ Connect to a service's database:
 
 ```powershell
 # Connect to SQL Server
-docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P SqlPassword123!
+docker exec -it sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P REPLACE_WITH_STRONG_PASSWORD
 
 # List databases
 SELECT name FROM sys.databases;
@@ -345,7 +345,7 @@ The frontend's proxy configuration (`proxy.conf.json`) routes API calls to the A
 
 **Check database is running:**
 ```powershell
-docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P SqlPassword123! -Q "SELECT 1"
+docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P REPLACE_WITH_STRONG_PASSWORD -Q "SELECT 1"
 ```
 
 **Check connection string:**

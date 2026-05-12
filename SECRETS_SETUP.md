@@ -40,26 +40,26 @@ dotnet user-secrets init
 # For Identity Service
 cd backend/identity-service/Api
 dotnet user-secrets set "Jwt:Key" "your-super-secret-256-bit-jwt-signing-key-here-minimum-32-chars"
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=IdentityServiceDb;User Id=sa;Password=SqlPassword123!;TrustServerCertificate=True"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=IdentityServiceDb;User Id=sa;Password=REPLACE_WITH_STRONG_PASSWORD;TrustServerCertificate=True"
 
 # For Answer Service
 cd backend/answer-service/Api
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=AnswerServiceDb;User Id=sa;Password=SqlPassword123!;TrustServerCertificate=True"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=AnswerServiceDb;User Id=sa;Password=REPLACE_WITH_STRONG_PASSWORD;TrustServerCertificate=True"
 dotnet user-secrets set "Jwt:Key" "your-super-secret-256-bit-jwt-signing-key-here-minimum-32-chars"
 
 # For Assessment Service
 cd backend/assessment-service/Api
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=AssessmentServiceDb;User Id=sa;Password=SqlPassword123!;TrustServerCertificate=True"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=AssessmentServiceDb;User Id=sa;Password=REPLACE_WITH_STRONG_PASSWORD;TrustServerCertificate=True"
 dotnet user-secrets set "Jwt:Key" "your-super-secret-256-bit-jwt-signing-key-here-minimum-32-chars"
 
 # For Candidate Service
 cd backend/candidate-service/Api
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=CandidateServiceDb;User Id=sa;Password=SqlPassword123!;TrustServerCertificate=True"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=CandidateServiceDb;User Id=sa;Password=REPLACE_WITH_STRONG_PASSWORD;TrustServerCertificate=True"
 dotnet user-secrets set "Jwt:Key" "your-super-secret-256-bit-jwt-signing-key-here-minimum-32-chars"
 
 # For Result Service
 cd backend/result-service/Api
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=ResultServiceDb;User Id=sa;Password=SqlPassword123!;TrustServerCertificate=True"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Database=ResultServiceDb;User Id=sa;Password=REPLACE_WITH_STRONG_PASSWORD;TrustServerCertificate=True"
 dotnet user-secrets set "Jwt:Key" "your-super-secret-256-bit-jwt-signing-key-here-minimum-32-chars"
 ```
 

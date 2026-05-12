@@ -162,7 +162,7 @@ cd C:\Dev
 ```
 • Frontend:               http://localhost:4200
 • API Gateway:           http://localhost:7080
-• RabbitMQ Management:   http://localhost:15672 (guest/guest)
+• RabbitMQ Management:   http://localhost:15672 (set your own credentials)
 • Identity Service:      http://localhost:7140/health
 • Answer Service:        http://localhost:7141/health
 • Assessment Service:    http://localhost:7142/health
@@ -256,7 +256,7 @@ RabbitMQ Message Broker
 ### Environment Variables (.env)
 ```
 # SQL Server credentials
-SQL_SA_PASSWORD=SqlPassword123!
+SQL_SA_PASSWORD=REPLACE_WITH_STRONG_PASSWORD
 
 # Message broker
 RABBITMQ_USER=guest
@@ -349,7 +349,7 @@ rabbitmq
 
 ### Test Database Connectivity
 ```powershell
-docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P SqlPassword123! -Q "SELECT 1"
+docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P REPLACE_WITH_STRONG_PASSWORD -Q "SELECT 1"
 ```
 
 ### Test Service Communication
