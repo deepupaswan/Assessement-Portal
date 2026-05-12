@@ -251,42 +251,54 @@ jobs:
             echo "${{ env.REGISTRY_PASSWORD }}" | docker login "${{ env.REGISTRY_HOST }}" -u "${{ env.REGISTRY_USERNAME }}" --password-stdin
 
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
 
-            docker compose -f docker-compose.prod.yml ps
+            # Keep the memory-heavy search stack out of the deployment path on the small VM.
+            docker compose -f docker-compose.prod.yml stop elasticsearch kibana || true
 
-            for container in \
-              "api-gateway" \
-              "identity-service" \
-              "answer-service" \
-              "assessment-service" \
-              "candidate-service" \
-              "result-service"
-            do
-              echo "Checking container health: $container"
-              ok="false"
-
-              for i in $(seq 1 30); do
-                status="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container" 2>/dev/null || true)"
-
-                if [ "$status" = "healthy" ]; then
-                  echo "Healthy: $container"
-                  ok="true"
-                  break
-                fi
-
-                if [ "$status" = "exited" ] || [ "$status" = "dead" ]; then
-                  echo "Container failed: $container (status=$status)"
-                  docker logs --tail 100 "$container" || true
-                  exit 1
-                fi
-
-                sleep 5
+            wait_healthy() {
+              name="$1"
+              for i in $(seq 1 90); do
+                status="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$name" 2>/dev/null || true)"
+                case "$status" in
+                  healthy|running)
+                    echo "$name status=$status"
+                    return 0
+                    ;;
+                  exited|dead|unhealthy)
+                    echo "$name failed with status=$status"
+                    docker logs --tail 120 "$name" || true
+                    return 1
+                    ;;
+                esac
+                sleep 4
               done
 
-              if [ "$ok" != "true" ]; then
-                echo "Health check failed for container: $container"
-                docker logs --tail 100 "$container" || true
+              echo "Timeout waiting for $name"
+              docker logs --tail 120 "$name" || true
+              return 1
+            }
+
+            dump_logs() {
+              name="$1"
+              echo "--- logs: $name ---"
+              docker logs --tail 120 "$name" || true
+              echo "--- end logs: $name ---"
+            }
+
+            docker compose -f docker-compose.prod.yml up -d sqlserver rabbitmq
+            wait_healthy sqlserver
+            wait_healthy rabbitmq
+
+            for service in identity-service answer-service assessment-service candidate-service result-service; do
+              docker compose -f docker-compose.prod.yml up -d --no-deps "$service"
+              if ! wait_healthy "$service"; then
+                dump_logs "$service"
                 exit 1
               fi
             done
+
+            docker compose -f docker-compose.prod.yml up -d --no-deps api-gateway frontend
+            wait_healthy api-gateway
+            wait_healthy frontend
+
+            docker compose -f docker-compose.prod.yml ps
