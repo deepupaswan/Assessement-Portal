@@ -5,6 +5,60 @@
   margin: 0 auto;
 }
 
+.admin-dashboard {
+  padding-top: $space-sm;
+}
+
+.dashboard-hero {
+  overflow: hidden;
+  border-radius: $radius-xl;
+  background:
+    radial-gradient(circle at top left, rgba(47, 111, 128, 0.16), transparent 35%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(244, 247, 245, 0.92));
+  box-shadow: $shadow-sm;
+}
+
+.dashboard-hero__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $space-xl;
+  flex-wrap: wrap;
+  padding: $space-2xl;
+}
+
+.dashboard-kicker {
+  margin: 0;
+  color: $color-primary-hover;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dashboard-title {
+  margin: 0;
+  color: $color-text-primary;
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.14;
+  font-weight: 700;
+  max-width: 24ch;
+}
+
+.dashboard-subtitle {
+  margin: $space-md 0 0;
+  max-width: 62ch;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+}
+
+.dashboard-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: $space-md;
+  min-width: min(100%, 460px);
+}
+
 .page-header {
   margin-bottom: $space-2xl;
 
@@ -48,6 +102,40 @@
 .quick-actions,
 .recent-activity {
   @include card;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $space-md;
+  margin-bottom: $space-lg;
+
+  h2 {
+    margin: 0 0 $space-xs;
+  }
+
+  p {
+    margin: 0;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+  }
+}
+
+.section-heading--split {
+  align-items: center;
+}
+
+.activity-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: $color-bg-primary;
+  color: $color-primary;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .kpi-card {
@@ -137,6 +225,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: $space-md;
+}
+
+.compact-actions .action-btn {
+  min-height: 54px;
 }
 
 .action-btn {
@@ -235,8 +327,18 @@
 }
 
 @media (max-width: $breakpoint-md) {
+  .dashboard-title,
   .page-header h1 {
     font-size: 22px;
+  }
+
+  .dashboard-hero__content {
+    padding: $space-xl;
+  }
+
+  .dashboard-actions {
+    grid-template-columns: 1fr;
+    min-width: 100%;
   }
 
   .action-buttons {

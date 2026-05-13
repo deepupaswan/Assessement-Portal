@@ -1,0 +1,124 @@
+:host {
+  display: block;
+}
+
+.candidate-page {
+  padding: 1.5rem 0 2rem;
+}
+
+.candidate-hero {
+  background:
+    radial-gradient(circle at top left, rgba(47, 111, 128, 0.16), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(244, 247, 245, 0.92));
+  border-radius: 1.4rem;
+}
+
+.candidate-hero__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.candidate-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--portal-accent-strong);
+}
+
+.candidate-title {
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  font-weight: 700;
+  color: var(--portal-ink);
+}
+
+.candidate-copy {
+  max-width: 56ch;
+  color: rgba(28, 42, 49, 0.72);
+}
+
+.candidate-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  background: var(--portal-surface);
+  border: 1px solid rgba(28, 42, 49, 0.08);
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 8px 24px rgba(17, 75, 95, 0.05);
+}
+
+.metric-label,
+.workspace-count {
+  display: inline-block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(28, 42, 49, 0.6);
+}
+
+.metric-value {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--portal-ink);
+}
+
+.workspace-panel {
+  border-radius: 1.25rem;
+}
+
+.workspace-loading {
+  padding: 1rem 0;
+  color: rgba(28, 42, 49, 0.7);
+}
+
+.candidate-grid {
+  min-height: 24rem;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  border: 1px dashed rgba(47, 111, 128, 0.22);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.empty-state__icon {
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(47, 111, 128, 0.1);
+  color: var(--portal-accent-strong);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+@media (max-width: 992px) {
+  .candidate-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 576px) {
+  .candidate-page {
+    padding-top: 0.75rem;
+  }
+
+  .candidate-metrics {
+    grid-template-columns: 1fr;
+  }
+}

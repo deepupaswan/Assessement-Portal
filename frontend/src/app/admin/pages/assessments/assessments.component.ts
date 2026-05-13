@@ -74,9 +74,15 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
         const assessment = params.data;
         return `
           <div class="ag-row-actions">
-            <button type="button" class="ag-action-btn" data-action="edit">Edit</button>
-            <button type="button" class="ag-action-btn" data-action="clone">Clone</button>
-            <button type="button" class="ag-action-btn danger" data-action="delete" ${assessment?.isDeleting ? 'disabled' : ''}>Delete</button>
+            <button type="button" class="ag-action-btn" data-action="edit" title="Edit assessment" aria-label="Edit assessment">
+              <i class="icon icon-edit"></i>
+            </button>
+            <button type="button" class="ag-action-btn" data-action="clone" title="Clone assessment" aria-label="Clone assessment">
+              <i class="icon icon-copy"></i>
+            </button>
+            <button type="button" class="ag-action-btn danger" data-action="delete" ${assessment?.isDeleting ? 'disabled' : ''} title="Delete assessment" aria-label="Delete assessment">
+              <i class="icon icon-trash"></i>
+            </button>
           </div>
         `;
       }
@@ -102,6 +108,27 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router
   ) {}
+
+  get totalAssessments(): number {
+    return this.assessments.length;
+  }
+
+  get activeAssessments(): number {
+    return this.assessments.filter(assessment => this.isActiveAssessment(assessment)).length;
+  }
+
+  get inactiveAssessments(): number {
+    return this.assessments.filter(assessment => !this.isActiveAssessment(assessment)).length;
+  }
+
+  get averageQuestions(): number {
+    if (!this.assessments.length) {
+      return 0;
+    }
+
+    const totalQuestions = this.assessments.reduce((sum, assessment) => sum + (assessment.questionCount ?? 0), 0);
+    return Math.round(totalQuestions / this.assessments.length);
+  }
 
   ngOnInit(): void {
     this.loadAssessments();
@@ -269,5 +296,9 @@ export class AssessmentsComponent implements OnInit, OnDestroy {
 
   getStatusText(isActive: boolean | undefined): string {
     return isActive ? AssessmentStatusLabels.Active : AssessmentStatusLabels.Inactive;
+  }
+
+  private isActiveAssessment(assessment: AssessmentRow): boolean {
+    return assessment.isActive !== undefined ? assessment.isActive : !!assessment.isPublished;
   }
 }

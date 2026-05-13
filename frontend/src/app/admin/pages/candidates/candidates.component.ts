@@ -49,9 +49,15 @@ export class CandidatesComponent implements OnInit, OnDestroy {
       filter: false,
       cellRenderer: (_params: ICellRendererParams<CandidateRow>) => `
         <div class="ag-row-actions">
-          <button type="button" class="ag-action-btn" data-action="assign">Assign</button>
-          <button type="button" class="ag-action-btn" data-action="edit">Edit</button>
-          <button type="button" class="ag-action-btn danger" data-action="delete">Delete</button>
+          <button type="button" class="ag-action-btn" data-action="assign" title="Assign assessment" aria-label="Assign assessment">
+            <i class="icon icon-user"></i>
+          </button>
+          <button type="button" class="ag-action-btn" data-action="edit" title="Edit candidate" aria-label="Edit candidate">
+            <i class="icon icon-edit"></i>
+          </button>
+          <button type="button" class="ag-action-btn danger" data-action="delete" title="Delete candidate" aria-label="Delete candidate">
+            <i class="icon icon-trash"></i>
+          </button>
         </div>
       `
     }
@@ -90,6 +96,27 @@ export class CandidatesComponent implements OnInit, OnDestroy {
     private assessmentApi: AssessmentApiService,
     private router: Router
   ) {}
+
+  get totalCandidates(): number {
+    return this.candidates.length;
+  }
+
+  get assignedCandidates(): number {
+    return this.candidates.filter(candidate => (candidate.assignmentCount ?? 0) > 0).length;
+  }
+
+  get unassignedCandidates(): number {
+    return this.candidates.filter(candidate => (candidate.assignmentCount ?? 0) === 0).length;
+  }
+
+  get averageAssignments(): number {
+    if (!this.candidates.length) {
+      return 0;
+    }
+
+    const totalAssignments = this.candidates.reduce((sum, candidate) => sum + (candidate.assignmentCount ?? 0), 0);
+    return Math.round(totalAssignments / this.candidates.length);
+  }
 
   ngOnInit(): void {
     this.loadCandidates();

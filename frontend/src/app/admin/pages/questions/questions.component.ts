@@ -39,6 +39,22 @@ export class QuestionsComponent implements OnInit, OnDestroy {
     private router: Router
   ) {}
 
+  get totalQuestions(): number {
+    return this.questions.length;
+  }
+
+  get mcqCount(): number {
+    return this.questions.filter(question => (question.questionType || question.type) === QuestionTypeValues.Mcq).length;
+  }
+
+  get descriptiveCount(): number {
+    return this.questions.filter(question => (question.questionType || question.type) === QuestionTypeValues.Descriptive).length;
+  }
+
+  get codingCount(): number {
+    return this.questions.filter(question => (question.questionType || question.type) === QuestionTypeValues.Coding).length;
+  }
+
   ngOnInit(): void {
     this.assessmentId = this.route.snapshot.paramMap.get('id');
     if (this.assessmentId) {

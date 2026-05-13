@@ -48,8 +48,12 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
         const disabled = data && !this.canEdit(data) ? 'disabled' : '';
         return `
           <div class="ag-row-actions">
-            <button type="button" class="ag-action-btn" data-action="edit" ${disabled}>Edit</button>
-            <button type="button" class="ag-action-btn danger" data-action="delete" ${disabled}>Delete</button>
+            <button type="button" class="ag-action-btn" data-action="edit" ${disabled} title="Edit assignment" aria-label="Edit assignment">
+              <i class="icon icon-edit"></i>
+            </button>
+            <button type="button" class="ag-action-btn danger" data-action="delete" ${disabled} title="Delete assignment" aria-label="Delete assignment">
+              <i class="icon icon-trash"></i>
+            </button>
           </div>
         `;
       }
@@ -93,6 +97,22 @@ export class AssignmentsComponent implements OnInit, OnDestroy {
     const now = new Date();
     const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
     this.minDateTime = localNow.toISOString().slice(0, 16);
+  }
+
+  get totalAssignments(): number {
+    return this.assignments.length;
+  }
+
+  get scheduledCount(): number {
+    return this.assignments.filter((assignment) => assignment.status.toLowerCase() === AssignmentFilterStatusValues.Scheduled).length;
+  }
+
+  get inProgressCount(): number {
+    return this.assignments.filter((assignment) => assignment.status.toLowerCase() === AssignmentFilterStatusValues.InProgress).length;
+  }
+
+  get submittedCount(): number {
+    return this.assignments.filter((assignment) => assignment.status.toLowerCase() === AssignmentFilterStatusValues.Submitted).length;
   }
 
   ngOnInit(): void {

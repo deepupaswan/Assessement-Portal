@@ -1,14 +1,35 @@
-<div class="page-container">
-  <div class="page-header">
-    <div class="header-top">
+<div class="page-container assessments-page">
+  <div class="assessments-hero card border-0 mb-4">
+    <div class="assessments-hero__content">
       <div>
-        <h1>Assessments</h1>
-        <p class="page-subtitle">Manage and create assessments</p>
+        <p class="assessments-kicker mb-2">Assessment Library</p>
+        <h1 class="assessments-title mb-2">Design, organize, and ship assessments faster.</h1>
+        <p class="assessments-subtitle mb-0">Search, filter, clone, and manage active assessments from one focused workspace.</p>
       </div>
-      <button type="button" class="btn btn-primary" (click)="createAssessment()" title="Create new assessment">
+
+      <button type="button" class="btn btn-primary assessments-create-btn" (click)="createAssessment()" title="Create new assessment">
         <i class="icon icon-plus"></i>
         <span>Create Assessment</span>
       </button>
+    </div>
+  </div>
+
+  <div class="assessment-metrics mb-4">
+    <div class="metric-card">
+      <span class="metric-label">Total assessments</span>
+      <strong class="metric-value">{{ totalAssessments }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Active</span>
+      <strong class="metric-value">{{ activeAssessments }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Inactive</span>
+      <strong class="metric-value">{{ inactiveAssessments }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Avg. questions</span>
+      <strong class="metric-value">{{ averageQuestions }}</strong>
     </div>
   </div>
 
@@ -17,46 +38,33 @@
     <p>{{ error }}</p>
   </div>
 
-  <div class="controls-bar">
-    <div class="search-box">
-      <i class="icon icon-search"></i>
-      <input
-        type="text"
-        placeholder="Search assessments..."
-        [(ngModel)]="searchTerm"
-        class="search-input"
-      >
-    </div>
+  <div class="controls-card card border-0 mb-4">
+    <div class="controls-bar">
+      <div class="search-box">
+        <i class="icon icon-search"></i>
+        <input
+          type="text"
+          placeholder="Search assessments..."
+          [(ngModel)]="searchTerm"
+          class="search-input"
+        >
+      </div>
 
-    <div class="filter-tabs">
-      <button
-        type="button"
-        [class.active]="filterType === 'all'"
-        (click)="filterType = 'all'"
-        class="filter-tab"
-      >
-        All ({{ assessments.length }})
-      </button>
-      <button
-        type="button"
-        [class.active]="filterType === 'active'"
-        (click)="filterType = 'active'"
-        class="filter-tab"
-      >
-        Active
-      </button>
-      <button
-        type="button"
-        [class.active]="filterType === 'inactive'"
-        (click)="filterType = 'inactive'"
-        class="filter-tab"
-      >
-        Inactive
-      </button>
+      <div class="filter-tabs">
+        <button type="button" [class.active]="filterType === 'all'" (click)="filterType = 'all'" class="filter-tab">
+          All ({{ assessments.length }})
+        </button>
+        <button type="button" [class.active]="filterType === 'active'" (click)="filterType = 'active'" class="filter-tab">
+          Active
+        </button>
+        <button type="button" [class.active]="filterType === 'inactive'" (click)="filterType = 'inactive'" class="filter-tab">
+          Inactive
+        </button>
+      </div>
     </div>
   </div>
 
-  <div class="assessments-section">
+  <div class="assessments-section card border-0">
     <div *ngIf="loading" class="loading-state">
       <div class="table-skeleton">
         <div class="skeleton-row header">

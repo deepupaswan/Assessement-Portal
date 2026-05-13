@@ -3,10 +3,20 @@
 .proctor-card {
   @include card;
   padding: $space-xl;
+  border-radius: $radius-xl;
 }
 
 .card-header {
   margin-bottom: $space-lg;
+
+  .card-kicker {
+    margin: 0 0 6px;
+    color: $color-primary;
+    font-size: $font-size-xs;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 
   h3 {
     margin: 0 0 4px;
@@ -31,6 +41,7 @@
 .stat {
   border-radius: $radius-lg;
   padding: $space-lg;
+  border: 1px solid $color-border;
   background: $color-bg-secondary;
 
   .label {
@@ -42,9 +53,10 @@
     letter-spacing: 0.04em;
   }
 
-  strong {
+  .value {
     color: $color-text-primary;
-    font-size: $font-size-xl;
+    font-size: $font-size-2xl;
+    line-height: 1;
   }
 }
 
@@ -63,10 +75,18 @@
   background: $color-bg-primary;
   text-align: left;
   cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: $color-border-strong;
+    box-shadow: $shadow-sm;
+    transform: translateY(-1px);
+  }
 
   &.selected {
     border-color: $color-primary;
     background: #eff6ff;
+    box-shadow: inset 3px 0 0 $color-primary;
   }
 }
 
@@ -113,6 +133,7 @@
   padding: $space-xl;
   text-align: center;
   color: $color-text-secondary;
+  background: $color-bg-secondary;
 }
 
 @media (max-width: $breakpoint-md) {

@@ -8,7 +8,8 @@ import { CandidateResultSummaryMessages } from '../constants/candidate-result-su
 
 @Component({
   selector: 'app-candidate-result-summary',
-  templateUrl: './candidate-result-summary.component.html'
+  templateUrl: './candidate-result-summary.component.html',
+  styleUrls: ['./candidate-result-summary.component.scss']
 })
 export class CandidateResultSummaryComponent implements OnInit, OnDestroy {
   result: ResultDetail | null = null;

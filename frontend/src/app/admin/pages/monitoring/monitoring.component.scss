@@ -5,6 +5,88 @@
   margin: 0 auto;
 }
 
+.monitoring-page {
+  padding-top: $space-sm;
+}
+
+.monitoring-hero {
+  overflow: hidden;
+  border-radius: $radius-xl;
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 35%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.93));
+  box-shadow: $shadow-sm;
+}
+
+.monitoring-hero__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $space-xl;
+  flex-wrap: wrap;
+  padding: $space-2xl;
+}
+
+.monitoring-kicker {
+  margin: 0;
+  color: $color-primary-hover;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.monitoring-title {
+  margin: 0;
+  color: $color-text-primary;
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.14;
+  font-weight: 700;
+  max-width: 24ch;
+}
+
+.monitoring-subtitle {
+  margin: $space-md 0 0;
+  max-width: 68ch;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+}
+
+.monitoring-hero__actions {
+  display: flex;
+  gap: $space-sm;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.monitoring-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: $space-lg;
+}
+
+.metric-card {
+  @include card;
+  padding: $space-lg;
+}
+
+.metric-label {
+  display: inline-block;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  display: block;
+  margin-top: $space-sm;
+  color: $color-text-primary;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
 .page-header {
   @include flex-between;
   gap: $space-lg;
@@ -73,6 +155,26 @@
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(340px, 0.95fr);
   gap: $space-xl;
+}
+
+.monitoring-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $space-lg;
+  padding: $space-xl;
+  border-radius: $radius-xl;
+}
+
+.banner-copy h2 {
+  margin: 0 0 $space-xs;
+  color: $color-text-primary;
+  font-size: $font-size-xl;
+}
+
+.banner-copy p {
+  margin: 0;
+  color: $color-text-secondary;
 }
 
 .panel,
@@ -268,6 +370,14 @@
 }
 
 @media (max-width: $breakpoint-md) {
+  .monitoring-hero__content {
+    padding: $space-xl;
+  }
+
+  .monitoring-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
@@ -278,8 +388,18 @@
     justify-content: space-between;
   }
 
+  .monitoring-banner {
+    flex-direction: column;
+  }
+
   .progress-cell {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 576px) {
+  .monitoring-metrics {
+    grid-template-columns: 1fr;
   }
 }

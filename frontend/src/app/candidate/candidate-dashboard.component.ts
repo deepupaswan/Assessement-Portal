@@ -11,6 +11,7 @@ import { CandidateDashboardMessages } from '../constants/candidate-dashboard.con
 @Component({
   selector: 'app-candidate-dashboard',
   templateUrl: './candidate-dashboard.component.html',
+  styleUrls: ['./candidate-dashboard.component.scss']
 })
 export class CandidateDashboardComponent implements OnDestroy {
   assignments: CandidateAssignment[] = [];
@@ -63,6 +64,25 @@ export class CandidateDashboardComponent implements OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   constructor(private candidateApi: CandidateApiService, private router: Router) {}
+
+  get totalAssignments(): number {
+    return this.assignments.length;
+  }
+
+  get activeAssignments(): number {
+    return this.assignments.filter(assignment => this.canOpenAssignment(assignment)).length;
+  }
+
+  get inProgressAssignments(): number {
+    return this.assignments.filter(assignment => assignment.status === CandidateAssessmentStatusValues.InProgress).length;
+  }
+
+  get completedAssignments(): number {
+    return this.assignments.filter(assignment =>
+      assignment.status === CandidateAssessmentStatusValues.Submitted ||
+      assignment.status === CandidateAssessmentStatusValues.Evaluated
+    ).length;
+  }
 
   ngOnInit(): void {
     this.loadAssignments();

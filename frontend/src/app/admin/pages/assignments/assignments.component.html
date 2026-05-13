@@ -1,27 +1,49 @@
-<div class="page-container">
-  <div class="page-header">
-    <div class="header-content">
-      <h1>Assignments</h1>
-      <p class="page-subtitle">Manage assessment assignments and scheduling</p>
-    </div>
+<div class="page-container assignments-page">
+  <div class="assignments-hero card border-0 mb-4">
+    <div class="assignments-hero__content">
+      <div>
+        <p class="assignments-kicker mb-2">Assignment Control</p>
+        <h1 class="assignments-title mb-2">Schedule and manage candidate assignments at scale.</h1>
+        <p class="assignments-subtitle mb-0">Create individual assignments, run bulk scheduling, and track assignment lifecycle in one place.</p>
+      </div>
 
-    <div class="header-actions">
-      <button
-        class="btn btn-secondary"
-        type="button"
-        (click)="openBulkForm()"
-        *ngIf="!showBulkForm">
-        <i class="icon icon-send"></i>
-        Bulk Assign
-      </button>
-      <button
-        class="btn btn-primary"
-        type="button"
-        (click)="openCreateForm()"
-        *ngIf="!showForm">
-        <i class="icon icon-plus"></i>
-        New Assignment
-      </button>
+      <div class="header-actions">
+        <button
+          class="btn btn-secondary"
+          type="button"
+          (click)="openBulkForm()"
+          *ngIf="!showBulkForm">
+          <i class="icon icon-send"></i>
+          Bulk Assign
+        </button>
+        <button
+          class="btn btn-primary"
+          type="button"
+          (click)="openCreateForm()"
+          *ngIf="!showForm">
+          <i class="icon icon-plus"></i>
+          New Assignment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="assignment-metrics mb-4" *ngIf="!loading">
+    <div class="metric-card">
+      <span class="metric-label">Total assignments</span>
+      <strong class="metric-value">{{ totalAssignments }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Scheduled</span>
+      <strong class="metric-value">{{ scheduledCount }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">In progress</span>
+      <strong class="metric-value">{{ inProgressCount }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Submitted</span>
+      <strong class="metric-value">{{ submittedCount }}</strong>
     </div>
   </div>
 
@@ -31,7 +53,7 @@
 
   <div class="page-content">
     <div class="form-section" *ngIf="showForm">
-      <div class="card">
+      <div class="card form-card-shell">
         <div class="card-header">
           <h3>{{ editingAssignment ? 'Edit Assignment' : 'Create New Assignment' }}</h3>
           <button class="btn-close" type="button" (click)="cancelForm()">x</button>
@@ -86,7 +108,7 @@
     </div>
 
     <div class="form-section" *ngIf="showBulkForm">
-      <div class="card">
+      <div class="card form-card-shell">
         <div class="card-header">
           <h3>Bulk Assign Assessment</h3>
           <button class="btn-close" type="button" (click)="closeBulkForm()">x</button>
@@ -160,7 +182,8 @@
     </div>
 
     <div class="table-section" *ngIf="!showForm && !showBulkForm">
-      <div class="controls-bar">
+      <div class="controls-card card border-0">
+        <div class="controls-bar">
         <div class="search-box">
           <i class="icon icon-search"></i>
           <input
@@ -203,9 +226,10 @@
             Submitted
           </button>
         </div>
+        </div>
       </div>
 
-      <div class="loading-spinner" *ngIf="loading">
+      <div class="loading-spinner card border-0" *ngIf="loading">
         <div class="list-skeleton">
           <div class="skeleton-toolbar">
             <span class="skeleton-line long"></span>
@@ -229,7 +253,7 @@
         </div>
       </div>
 
-      <div class="empty-state" *ngIf="!loading && filteredAssignments.length === 0">
+      <div class="empty-state card border-0" *ngIf="!loading && filteredAssignments.length === 0">
         <p>No assignments found</p>
         <button class="btn btn-primary" type="button" (click)="openCreateForm()">
           <i class="icon icon-plus"></i>

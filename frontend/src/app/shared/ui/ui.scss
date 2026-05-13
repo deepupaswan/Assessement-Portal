@@ -1,0 +1,54 @@
+/* Minimal UI kit used by redesigned login page */
+
+/* Card */
+.auth-card {
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(20,30,34,0.08);
+  overflow: hidden;
+}
+
+.auth-card .card-body {
+  padding: 2rem;
+}
+
+/* Primary button */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s ease, transform .06s ease;
+}
+
+.ui-btn.ui-btn-primary {
+  background: var(--portal-accent);
+  color: #fff;
+  border: 1px solid var(--portal-accent);
+}
+
+.ui-btn.ui-btn-primary:hover,
+.ui-btn.ui-btn-primary:focus {
+  background: var(--portal-accent-strong);
+  border-color: var(--portal-accent-strong);
+}
+
+/* Form inputs */
+.ui-form-field {
+  margin-bottom: 1rem;
+}
+
+.ui-form-control {
+  border-radius: 8px;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid rgba(28,42,49,0.12);
+}
+
+.ui-form-control:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47,111,128,0.08);
+  border-color: var(--portal-accent);
+}

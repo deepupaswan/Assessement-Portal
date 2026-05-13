@@ -1,16 +1,20 @@
-<div class="page-container">
-  <div class="page-header">
-    <div class="header-top">
+<div class="page-container questions-page">
+  <div class="questions-hero card border-0 mb-4">
+    <div class="questions-hero__content">
       <div>
-        <button type="button" class="btn-back" (click)="goBack()" title="Back to assessments">
-          <i class="icon icon-chevron-left"></i>
-        </button>
-        <div class="header-content">
-          <h1>{{ assessment?.title || 'Questions' }}</h1>
-          <p class="page-subtitle">Manage and organize questions</p>
+        <div class="questions-hero__back">
+          <button type="button" class="btn-back" (click)="goBack()" title="Back to assessments">
+            <i class="icon icon-chevron-left"></i>
+          </button>
+          <div>
+            <p class="questions-kicker mb-1">Question Builder</p>
+            <h1 class="questions-title mb-2">{{ assessment?.title || 'Questions' }}</h1>
+            <p class="questions-subtitle mb-0">Design and organize assessment questions with a clearer editing surface.</p>
+          </div>
         </div>
       </div>
-      <div class="header-actions">
+
+      <div class="questions-hero__actions">
         <button type="button" class="btn btn-secondary" (click)="editAssessment()" title="Edit assessment" *ngIf="!showForm && assessmentId">
           <i class="icon icon-edit"></i>
           <span>Edit Assessment</span>
@@ -23,13 +27,32 @@
     </div>
   </div>
 
+  <div class="question-metrics mb-4" *ngIf="!loading">
+    <div class="metric-card">
+      <span class="metric-label">Total questions</span>
+      <strong class="metric-value">{{ totalQuestions }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">MCQ</span>
+      <strong class="metric-value">{{ mcqCount }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Descriptive</span>
+      <strong class="metric-value">{{ descriptiveCount }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Coding</span>
+      <strong class="metric-value">{{ codingCount }}</strong>
+    </div>
+  </div>
+
   <div *ngIf="error" class="alert alert-error">
     <i class="icon icon-alert-circle"></i>
     <p>{{ error }}</p>
   </div>
 
   <div class="question-form-section" *ngIf="showForm">
-    <div class="form-container">
+    <div class="form-container card border-0">
       <h2>{{ editingQuestion ? 'Edit Question' : 'Create Question' }}</h2>
 
       <div class="form-group">
@@ -133,7 +156,7 @@
     </div>
   </div>
 
-  <div class="questions-section" *ngIf="!showForm">
+  <div class="questions-section card border-0" *ngIf="!showForm">
     <div *ngIf="loading" class="loading-state">
       <div class="questions-skeleton">
         <div class="skeleton-chip-row">
@@ -170,7 +193,7 @@
     </div>
 
     <div *ngIf="!loading && questions.length > 0" class="questions-list">
-      <div class="filter-tabs">
+      <div class="filter-tabs questions-filter-tabs">
         <button
           type="button"
           [class.active]="filterType === 'all'"

@@ -55,6 +55,22 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  get totalCandidates(): number {
+    return this.analytics?.totalCandidates ?? 0;
+  }
+
+  get averageScore(): number {
+    return this.analytics?.averageScore ?? 0;
+  }
+
+  get suspiciousCases(): number {
+    return this.analytics?.suspiciousCases ?? 0;
+  }
+
+  get completionRate(): number {
+    return this.analytics?.completionRate ?? 0;
+  }
+
   // Quick Actions
   createAssessment(): void {
     this.router.navigate(['/admin/assessments']);

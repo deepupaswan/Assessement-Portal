@@ -1,18 +1,41 @@
-<div class="page-container">
-  <div class="page-header">
-    <div class="header-content">
-      <h1>Candidates</h1>
-      <p class="page-subtitle">Manage candidates and bulk upload</p>
+<div class="page-container candidates-page">
+  <div class="candidates-hero card border-0 mb-4">
+    <div class="candidates-hero__content">
+      <div>
+        <p class="candidates-kicker mb-2">Candidate Registry</p>
+        <h1 class="candidates-title mb-2">Manage candidate records and assignments from one place.</h1>
+        <p class="candidates-subtitle mb-0">Add people, upload CSVs, assign assessments, and keep the roster clean and current.</p>
+      </div>
+
+      <div class="candidates-hero__actions">
+        <button type="button" class="btn btn-secondary" (click)="openBulkUpload()" *ngIf="!showBulkUpload">
+          <i class="icon icon-upload"></i>
+          Bulk Upload
+        </button>
+        <button type="button" class="btn btn-primary" (click)="openCreateForm()" *ngIf="!showForm">
+          <i class="icon icon-plus"></i>
+          Add Candidate
+        </button>
+      </div>
     </div>
-    <div class="header-actions">
-      <button type="button" class="btn btn-secondary" (click)="openBulkUpload()" *ngIf="!showBulkUpload">
-        <i class="icon icon-upload"></i>
-        Bulk Upload
-      </button>
-      <button type="button" class="btn btn-primary" (click)="openCreateForm()" *ngIf="!showForm">
-        <i class="icon icon-plus"></i>
-        Add Candidate
-      </button>
+  </div>
+
+  <div class="candidate-metrics mb-4">
+    <div class="metric-card">
+      <span class="metric-label">Total candidates</span>
+      <strong class="metric-value">{{ totalCandidates }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Assigned</span>
+      <strong class="metric-value">{{ assignedCandidates }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Unassigned</span>
+      <strong class="metric-value">{{ unassignedCandidates }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Avg. assignments</span>
+      <strong class="metric-value">{{ averageAssignments }}</strong>
     </div>
   </div>
 
@@ -22,7 +45,7 @@
 
   <div class="page-content">
     <div class="bulk-upload-section" *ngIf="showBulkUpload">
-      <div class="card">
+      <div class="card form-card-shell">
         <div class="card-header">
           <h3>Bulk Upload Candidates</h3>
           <button type="button" class="btn-close" (click)="closeBulkUpload()" aria-label="Close bulk upload">
@@ -70,7 +93,7 @@
     </div>
 
     <div class="form-section" *ngIf="showForm">
-      <div class="card">
+      <div class="card form-card-shell">
         <div class="card-header">
           <h3>{{ editingCandidate ? 'Edit Candidate' : 'Create New Candidate' }}</h3>
           <button type="button" class="btn-close" (click)="cancelForm()" aria-label="Close candidate form">
@@ -111,7 +134,7 @@
     </div>
 
     <div class="form-section" *ngIf="showAssignForm">
-      <div class="card">
+      <div class="card form-card-shell">
         <div class="card-header">
           <h3>Assign Assessment to {{ assigningCandidate?.name }}</h3>
           <button type="button" class="btn-close" (click)="closeAssignForm()" aria-label="Close assignment form">
@@ -144,42 +167,44 @@
     </div>
 
     <div class="table-section" *ngIf="!showForm && !showBulkUpload && !showAssignForm">
-      <div class="controls-bar">
-        <div class="search-box">
-          <i class="icon icon-search"></i>
-          <input
-            type="text"
-            [(ngModel)]="searchTerm"
-            placeholder="Search by name or email..."
-            class="search-input"
-          >
-        </div>
+      <div class="controls-card card border-0">
+        <div class="controls-bar">
+          <div class="search-box">
+            <i class="icon icon-search"></i>
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              placeholder="Search by name or email..."
+              class="search-input"
+            >
+          </div>
 
-        <div class="filter-tabs">
-          <button
-            type="button"
-            class="filter-tab"
-            [class.active]="filterStatus === 'all'"
-            (click)="filterStatus = 'all'"
-          >
-            All
-          </button>
-          <button
-            type="button"
-            class="filter-tab"
-            [class.active]="filterStatus === 'active'"
-            (click)="filterStatus = 'active'"
-          >
-            Active
-          </button>
-          <button
-            type="button"
-            class="filter-tab"
-            [class.active]="filterStatus === 'assigned'"
-            (click)="filterStatus = 'assigned'"
-          >
-            Assigned
-          </button>
+          <div class="filter-tabs">
+            <button
+              type="button"
+              class="filter-tab"
+              [class.active]="filterStatus === 'all'"
+              (click)="filterStatus = 'all'"
+            >
+              All
+            </button>
+            <button
+              type="button"
+              class="filter-tab"
+              [class.active]="filterStatus === 'active'"
+              (click)="filterStatus = 'active'"
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              class="filter-tab"
+              [class.active]="filterStatus === 'assigned'"
+              (click)="filterStatus = 'assigned'"
+            >
+              Assigned
+            </button>
+          </div>
         </div>
       </div>
 

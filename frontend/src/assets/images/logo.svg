@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40" viewBox="0 0 160 40" role="img" aria-labelledby="logoTitle">
+  <title id="logoTitle">Assessment Portal</title>
+  <rect rx="6" width="160" height="40" fill="#114b5f" />
+  <text x="20" y="25" font-family="Segoe UI, Tahoma, Geneva, Verdana, sans-serif" font-size="16" fill="#ffffff">Assessment Portal</text>
+</svg>

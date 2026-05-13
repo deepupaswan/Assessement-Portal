@@ -104,6 +104,22 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     private readonly router: Router
   ) {}
 
+  get totalSessions(): number {
+    return this.sessions.length;
+  }
+
+  get flaggedSessionCount(): number {
+    return this.flaggedSessions.length;
+  }
+
+  get alertCount(): number {
+    return this.alerts.length;
+  }
+
+  get selectedAlertCount(): number {
+    return this.selectedSessionAlerts.length;
+  }
+
   ngOnInit(): void {
     this.monitoringState.initialize();
 

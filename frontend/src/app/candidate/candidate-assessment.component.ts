@@ -46,6 +46,26 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
     private signalR: SignalRService
   ) {}
 
+  get totalQuestions(): number {
+    return this.session?.questions.length ?? 0;
+  }
+
+  get completionPercent(): number {
+    if (!this.totalQuestions) {
+      return 0;
+    }
+
+    return Math.round((this.answerMap.size / this.totalQuestions) * 100);
+  }
+
+  get answeredCount(): number {
+    return this.answerMap.size;
+  }
+
+  get remainingLabel(): string {
+    return this.formatTime(this.remainingSeconds);
+  }
+
   ngOnInit(): void {
     const candidateAssessmentId = this.route.snapshot.paramMap.get('candidateAssessmentId');
     if (!candidateAssessmentId) {
@@ -218,7 +238,7 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
 
   private upsertAnswer(answer: AnswerSaveRequest): void {
     this.answerMap.set(answer.questionId, answer);
-    this.sendProgress(this.getCompletionPercent());
+    this.sendProgress(this.completionPercent);
   }
 
   private flushAnswers() {
@@ -228,14 +248,6 @@ export class CandidateAssessmentComponent implements OnInit, OnDestroy {
       candidateId: this.session!.candidateId,
       answers
     });
-  }
-
-  private getCompletionPercent(): number {
-    if (!this.session?.questions.length) {
-      return 0;
-    }
-
-    return Math.round((this.answerMap.size / this.session.questions.length) * 100);
   }
 
   private sendProgress(progress: number): void {

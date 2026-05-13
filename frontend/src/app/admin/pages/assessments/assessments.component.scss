@@ -5,6 +5,90 @@
   margin: 0 auto;
 }
 
+.assessments-page {
+  padding-top: $space-sm;
+}
+
+.assessments-hero {
+  overflow: hidden;
+  border-radius: $radius-xl;
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.15), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.93));
+  box-shadow: $shadow-sm;
+}
+
+.assessments-hero__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $space-xl;
+  flex-wrap: wrap;
+  padding: $space-2xl;
+}
+
+.assessments-kicker {
+  margin: 0;
+  color: $color-primary-hover;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.assessments-title {
+  margin: 0;
+  color: $color-text-primary;
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.14;
+  font-weight: 700;
+  max-width: 24ch;
+}
+
+.assessments-subtitle {
+  margin: $space-md 0 0;
+  max-width: 64ch;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+}
+
+.assessments-create-btn {
+  min-width: 180px;
+}
+
+.assessment-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: $space-lg;
+}
+
+.metric-card {
+  @include card;
+  padding: $space-lg;
+}
+
+.metric-label {
+  display: inline-block;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  display: block;
+  margin-top: $space-sm;
+  color: $color-text-primary;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.controls-card {
+  padding: $space-lg;
+  border-radius: $radius-xl;
+}
+
 .page-header {
   margin-bottom: $space-2xl;
 
@@ -121,6 +205,7 @@
 .assessments-section {
   @include card;
   overflow: hidden;
+  border-radius: $radius-xl;
 }
 
 .loading-state {
@@ -177,6 +262,18 @@
   h3 {
     color: $color-text-primary;
     font-size: $font-size-xl;
+  }
+}
+
+.btn-primary-outline {
+  @include button-secondary;
+  background: $color-bg-primary;
+  border-color: rgba(15, 118, 110, 0.24);
+  color: $color-primary;
+
+  &:hover:not(:disabled) {
+    background: $color-primary-light;
+    border-color: $color-primary;
   }
 }
 
@@ -330,6 +427,14 @@
 }
 
 @media (max-width: $breakpoint-md) {
+  .assessments-hero__content {
+    padding: $space-xl;
+  }
+
+  .assessment-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .page-header .header-top {
     flex-direction: column;
 
@@ -360,5 +465,19 @@
     td {
       padding: $space-md;
     }
+  }
+}
+
+@media (max-width: 576px) {
+  .assessment-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-tabs {
+    width: 100%;
+  }
+
+  .filter-tab {
+    flex: 1 1 auto;
   }
 }

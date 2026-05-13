@@ -1,11 +1,31 @@
-<div class="page-container">
-  <div class="page-header">
-    <div class="header-top">
+<div class="page-container all-questions-page">
+  <div class="all-questions-hero card border-0 mb-4">
+    <div class="all-questions-hero__content">
       <div>
-        <h1>All Questions</h1>
-        <p class="page-subtitle">Browse questions across every assessment</p>
+        <p class="all-questions-kicker mb-2">Question Library</p>
+        <h1 class="all-questions-title mb-2">Browse and manage every question in one place.</h1>
+        <p class="all-questions-subtitle mb-0">Search globally, filter by type, and jump directly to each assessment editor.</p>
       </div>
       <button type="button" class="btn btn-outline-primary" (click)="refresh()" [disabled]="loading">Refresh</button>
+    </div>
+  </div>
+
+  <div class="all-questions-metrics mb-4" *ngIf="!loading">
+    <div class="metric-card">
+      <span class="metric-label">Total questions</span>
+      <strong class="metric-value">{{ totalQuestions }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Assessments</span>
+      <strong class="metric-value">{{ uniqueAssessmentCount }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">MCQ</span>
+      <strong class="metric-value">{{ mcqCount }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Descriptive</span>
+      <strong class="metric-value">{{ descriptiveCount }}</strong>
     </div>
   </div>
 
@@ -14,7 +34,8 @@
     <p>{{ error }}</p>
   </div>
 
-  <div class="controls-bar">
+  <div class="controls-card card border-0 mb-3">
+    <div class="controls-bar">
     <div class="search-box all-questions-search-box">
       <i class="icon icon-search"></i>
       <input
@@ -31,6 +52,7 @@
       <button type="button" class="filter-tab" [class.active]="filterType === 'CODING'" (click)="filterType = 'CODING'">Coding</button>
       <button type="button" class="filter-tab" (click)="clearFilters()">Clear</button>
     </div>
+    </div>
   </div>
 
   <div class="questions-summary" *ngIf="!loading && filteredQuestions.length > 0">
@@ -38,7 +60,7 @@
     <small class="text-secondary">Open/Edit goes to the per-assessment editor; delete acts on the selected question.</small>
   </div>
 
-  <div class="table-wrapper">
+  <div class="table-wrapper card border-0">
     <div *ngIf="loading" class="loading-state">
       <div class="table-skeleton">
         <div class="skeleton-row header">

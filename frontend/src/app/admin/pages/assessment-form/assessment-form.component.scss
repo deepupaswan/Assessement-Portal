@@ -1,63 +1,174 @@
+@import '../../styles/admin.shared.scss';
+
+.page-container {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.assessment-form-page {
+  padding-top: $space-sm;
+}
+
+.form-hero {
+  overflow: hidden;
+  border-radius: $radius-xl;
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.15), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.93));
+  box-shadow: $shadow-sm;
+}
+
+.form-hero__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $space-xl;
+  flex-wrap: wrap;
+  padding: $space-2xl;
+}
+
+.form-kicker {
+  margin: 0;
+  color: $color-primary-hover;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.form-title {
+  margin: 0;
+  color: $color-text-primary;
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.14;
+  font-weight: 700;
+}
+
+.form-subtitle {
+  margin: $space-md 0 0;
+  max-width: 60ch;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+}
+
+.form-status-card {
+  min-width: 180px;
+  padding: $space-lg;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-bg-primary;
+  box-shadow: $shadow-sm;
+}
+
+.form-status-label {
+  display: block;
+  margin-bottom: $space-xs;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.loading-state {
+  padding: $space-xl;
+}
+
 .form-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1.25rem;
-  max-width: 760px;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: $space-2xl;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-sm;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-lg;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #111827;
+  color: $color-text-primary;
 }
 
 .form-control {
   width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 0.625rem 0.75rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  padding: 0.75rem 0.875rem;
   font: inherit;
+  color: $color-text-primary;
+  background: $color-bg-primary;
 }
 
 .form-control:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: $color-primary;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: $space-lg;
 }
 
 .checkbox-group {
   display: flex;
-  align-items: end;
+  align-items: stretch;
 }
 
 .checkbox-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.95rem 1rem;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  background: $color-bg-secondary;
   font-weight: 500;
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+  gap: $space-sm;
+  margin-top: $space-xl;
 }
 
-@media (max-width: 720px) {
+@media (max-width: $breakpoint-md) {
+  .form-hero__content {
+    padding: $space-xl;
+  }
+
+  .form-grid,
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .form-card {
+    padding: $space-xl;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions .btn {
+    width: 100%;
   }
 }

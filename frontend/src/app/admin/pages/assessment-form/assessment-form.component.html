@@ -1,11 +1,17 @@
-<div class="page-container">
-  <div class="page-header">
-    <div class="header-top">
+<div class="page-container assessment-form-page">
+  <div class="form-hero card border-0 mb-4">
+    <div class="form-hero__content">
       <div>
-        <h1>{{ isEditMode ? 'Edit Assessment' : 'Create Assessment' }}</h1>
-        <p class="page-subtitle">
-          {{ isEditMode ? 'Update assessment details' : 'Create assessment details before adding questions' }}
+        <p class="form-kicker mb-2">Assessment Builder</p>
+        <h1 class="form-title mb-2">{{ isEditMode ? 'Edit assessment' : 'Create assessment' }}</h1>
+        <p class="form-subtitle mb-0">
+          {{ isEditMode ? 'Refine the assessment details before publishing updates.' : 'Add the core details first, then attach questions and scoring.' }}
         </p>
+      </div>
+
+      <div class="form-status-card">
+        <span class="form-status-label">Mode</span>
+        <strong>{{ isEditMode ? 'Editing existing' : 'New assessment' }}</strong>
       </div>
     </div>
   </div>
@@ -15,38 +21,38 @@
     <p>{{ error }}</p>
   </div>
 
-  <div *ngIf="loading" class="loading-state">
+  <div *ngIf="loading" class="loading-state card border-0">
     <p>Loading assessment...</p>
   </div>
 
-  <form *ngIf="!loading" class="form-card" (ngSubmit)="submit()">
-    <div class="form-group">
-      <label for="assessment-title">Title *</label>
-      <input
-        id="assessment-title"
-        type="text"
-        [(ngModel)]="form.title"
-        name="title"
-        required
-        maxlength="120"
-        class="form-control"
-        placeholder="Enter assessment title"
-      >
-    </div>
+  <form *ngIf="!loading" class="form-card card border-0" (ngSubmit)="submit()">
+    <div class="form-grid">
+      <div class="form-group form-group--full">
+        <label for="assessment-title">Title *</label>
+        <input
+          id="assessment-title"
+          type="text"
+          [(ngModel)]="form.title"
+          name="title"
+          required
+          maxlength="120"
+          class="form-control"
+          placeholder="Enter assessment title"
+        >
+      </div>
 
-    <div class="form-group">
-      <label for="assessment-description">Description</label>
-      <textarea
-        id="assessment-description"
-        [(ngModel)]="form.description"
-        name="description"
-        rows="4"
-        class="form-control"
-        placeholder="Describe the assessment"
-      ></textarea>
-    </div>
+      <div class="form-group form-group--full">
+        <label for="assessment-description">Description</label>
+        <textarea
+          id="assessment-description"
+          [(ngModel)]="form.description"
+          name="description"
+          rows="5"
+          class="form-control"
+          placeholder="Describe the assessment"
+        ></textarea>
+      </div>
 
-    <div class="form-row">
       <div class="form-group">
         <label for="assessment-duration">Duration (minutes) *</label>
         <input
@@ -68,7 +74,10 @@
             [(ngModel)]="form.randomizeQuestions"
             name="randomizeQuestions"
           >
-          Randomize questions
+          <span>
+            <strong>Randomize questions</strong>
+            <small class="text-muted d-block">Shuffle question order for each candidate session.</small>
+          </span>
         </label>
       </div>
     </div>

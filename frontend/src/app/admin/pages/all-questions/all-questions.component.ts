@@ -5,7 +5,7 @@ import { takeUntil } from 'rxjs/operators';
 import { CellClickedEvent, ColDef, ICellRendererParams } from 'ag-grid-community';
 import { AssessmentApiService, GlobalQuestionItem } from '../../../core/services/assessment-api.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { QuestionType, QuestionTypeLabels } from '../../../constants/assessment.constants';
+import { QuestionType, QuestionTypeLabels, QuestionTypeValues } from '../../../constants/assessment.constants';
 import { AssessmentRoutes } from '../../../constants/assessments.constants';
 import { AllQuestionRow } from './all-questions.models';
 
@@ -85,9 +85,15 @@ export class AllQuestionsComponent implements OnInit, OnDestroy {
       filter: false,
       cellRenderer: (params: ICellRendererParams<AllQuestionRow>) => `
         <div class="ag-row-actions">
-          <button type="button" class="ag-action-btn" data-action="open">Open</button>
-          <button type="button" class="ag-action-btn" data-action="edit">Edit</button>
-          <button type="button" class="ag-action-btn danger" data-action="delete" ${params.data?.isDeleting ? 'disabled' : ''}>Delete</button>
+          <button type="button" class="ag-action-btn" data-action="open" title="Open question" aria-label="Open question">
+            <i class="icon icon-file-text"></i>
+          </button>
+          <button type="button" class="ag-action-btn" data-action="edit" title="Edit question" aria-label="Edit question">
+            <i class="icon icon-edit"></i>
+          </button>
+          <button type="button" class="ag-action-btn danger" data-action="delete" ${params.data?.isDeleting ? 'disabled' : ''} title="Delete question" aria-label="Delete question">
+            <i class="icon icon-trash"></i>
+          </button>
         </div>
       `
     }
@@ -111,6 +117,22 @@ export class AllQuestionsComponent implements OnInit, OnDestroy {
     private readonly notificationService: NotificationService,
     private readonly router: Router
   ) {}
+
+  get totalQuestions(): number {
+    return this.questions.length;
+  }
+
+  get uniqueAssessmentCount(): number {
+    return new Set(this.questions.map(question => question.assessmentId).filter(Boolean)).size;
+  }
+
+  get mcqCount(): number {
+    return this.questions.filter(question => (question.questionType || question.type) === QuestionTypeValues.Mcq).length;
+  }
+
+  get descriptiveCount(): number {
+    return this.questions.filter(question => (question.questionType || question.type) === QuestionTypeValues.Descriptive).length;
+  }
 
   ngOnInit(): void {
     this.loadQuestions();

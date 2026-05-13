@@ -1,24 +1,55 @@
-<section class="mb-4">
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <div>
-      <h2 class="mb-1">Candidate Workspace</h2>
-      <p class="text-secondary mb-0">Start or resume assigned assessments with auto-save enabled.</p>
+<section class="candidate-page">
+  <div class="candidate-hero card border-0 shadow-sm mb-4">
+    <div class="card-body candidate-hero__content">
+      <div>
+        <p class="candidate-kicker mb-2">Candidate Workspace</p>
+        <h2 class="candidate-title mb-2">Your assessments, one focused workspace</h2>
+        <p class="candidate-copy mb-0">Start new assignments, resume in-progress sessions, and track what is ready to submit.</p>
+      </div>
+
+      <div class="candidate-hero__actions">
+        <button class="ui-btn ui-btn-primary" type="button" (click)="loadAssignments()" [disabled]="loading">Refresh</button>
+      </div>
     </div>
-    <button class="btn btn-outline-primary" type="button" (click)="loadAssignments()" [disabled]="loading">Refresh</button>
+  </div>
+
+  <div class="candidate-metrics mb-4">
+    <div class="metric-card">
+      <span class="metric-label">Total assignments</span>
+      <strong class="metric-value">{{ totalAssignments }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Ready to open</span>
+      <strong class="metric-value">{{ activeAssignments }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">In progress</span>
+      <strong class="metric-value">{{ inProgressAssignments }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Completed</span>
+      <strong class="metric-value">{{ completedAssignments }}</strong>
+    </div>
   </div>
 
   <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
-  <div class="card shadow-sm border-0">
+  <div class="workspace-panel card border-0 shadow-sm">
     <div class="card-body">
-      <h5 class="card-title">Assigned Assessments</h5>
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+          <h5 class="card-title mb-1">Assigned assessments</h5>
+          <p class="text-secondary mb-0">Open an active assignment to continue or start your next assessment.</p>
+        </div>
+        <span class="workspace-count">{{ totalAssignments }} total</span>
+      </div>
 
-      <div *ngIf="loading" class="text-secondary">Loading assignments...</div>
+      <div *ngIf="loading" class="workspace-loading">Loading assignments...</div>
 
       <div class="table-responsive" *ngIf="!loading">
         <ag-grid-angular
           *ngIf="assignments.length; else noAssignments"
-          class="ag-theme-quartz ag-grid-host"
+          class="ag-theme-quartz ag-grid-host candidate-grid"
           [rowData]="assignments"
           [columnDefs]="assignmentColumnDefs"
           [defaultColDef]="defaultColDef"
@@ -31,7 +62,11 @@
       </div>
 
       <ng-template #noAssignments>
-        <div class="alert alert-info mb-0">No assessments have been assigned yet.</div>
+        <div class="empty-state">
+          <div class="empty-state__icon">⌁</div>
+          <h6 class="mb-2">No assessments assigned yet</h6>
+          <p class="text-secondary mb-0">When an admin assigns you an assessment, it will appear here and you can open it right away.</p>
+        </div>
       </ng-template>
     </div>
   </div>

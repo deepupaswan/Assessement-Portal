@@ -5,6 +5,93 @@
   margin: 0 auto;
 }
 
+.questions-page {
+  padding-top: $space-sm;
+}
+
+.questions-hero {
+  overflow: hidden;
+  border-radius: $radius-xl;
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.15), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.93));
+  box-shadow: $shadow-sm;
+}
+
+.questions-hero__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $space-xl;
+  flex-wrap: wrap;
+  padding: $space-2xl;
+}
+
+.questions-hero__back {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-lg;
+}
+
+.questions-kicker {
+  margin: 0;
+  color: $color-primary-hover;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.questions-title {
+  margin: 0;
+  color: $color-text-primary;
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.14;
+  font-weight: 700;
+  max-width: 24ch;
+}
+
+.questions-subtitle {
+  margin: $space-md 0 0;
+  max-width: 64ch;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+}
+
+.questions-hero__actions {
+  display: flex;
+  gap: $space-sm;
+  flex-wrap: wrap;
+}
+
+.question-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: $space-lg;
+}
+
+.metric-card {
+  @include card;
+  padding: $space-lg;
+}
+
+.metric-label {
+  display: inline-block;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  display: block;
+  margin-top: $space-sm;
+  color: $color-text-primary;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
 .page-header {
   margin-bottom: $space-2xl;
 
@@ -72,6 +159,15 @@
   @include card;
 }
 
+.questions-section {
+  padding: $space-xl;
+  border-radius: $radius-xl;
+}
+
+.questions-filter-tabs {
+  margin-bottom: $space-lg;
+}
+
 .form-container {
   padding: $space-xl;
 
@@ -111,6 +207,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: $space-md;
+}
+
+.form-container.card {
+  border-radius: $radius-xl;
 }
 
 .radio-option,
@@ -372,6 +472,14 @@
   }
 }
 
+.btn-back {
+  @include button-secondary;
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+  margin-top: 2px;
+}
+
 .card-content {
   padding: $space-lg;
 
@@ -427,6 +535,14 @@
 }
 
 @media (max-width: $breakpoint-md) {
+  .questions-hero__content {
+    padding: $space-xl;
+  }
+
+  .question-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .page-header .header-top {
     flex-direction: column;
 
@@ -453,5 +569,23 @@
     .btn {
       width: 100%;
     }
+  }
+
+  .questions-hero__back {
+    width: 100%;
+  }
+
+  .questions-hero__actions {
+    width: 100%;
+  }
+
+  .questions-hero__actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .question-metrics {
+    grid-template-columns: 1fr;
   }
 }

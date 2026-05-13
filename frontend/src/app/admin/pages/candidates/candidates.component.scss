@@ -5,6 +5,87 @@
   margin: 0 auto;
 }
 
+.candidates-page {
+  padding-top: $space-sm;
+}
+
+.candidates-hero {
+  overflow: hidden;
+  border-radius: $radius-xl;
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.15), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.93));
+  box-shadow: $shadow-sm;
+}
+
+.candidates-hero__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: $space-xl;
+  flex-wrap: wrap;
+  padding: $space-2xl;
+}
+
+.candidates-kicker {
+  margin: 0;
+  color: $color-primary-hover;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.candidates-title {
+  margin: 0;
+  color: $color-text-primary;
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.14;
+  font-weight: 700;
+  max-width: 24ch;
+}
+
+.candidates-subtitle {
+  margin: $space-md 0 0;
+  max-width: 65ch;
+  color: $color-text-secondary;
+  font-size: $font-size-md;
+}
+
+.candidates-hero__actions {
+  display: flex;
+  gap: $space-sm;
+  flex-wrap: wrap;
+}
+
+.candidate-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: $space-lg;
+}
+
+.metric-card {
+  @include card;
+  padding: $space-lg;
+}
+
+.metric-label {
+  display: inline-block;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  display: block;
+  margin-top: $space-sm;
+  color: $color-text-primary;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
 .page-header {
   display: flex;
   align-items: flex-start;
@@ -99,6 +180,12 @@
   .card {
     max-width: 500px;
   }
+}
+
+.bulk-upload-section .card,
+.form-section .card,
+.form-card-shell {
+  max-width: 560px;
 }
 
 .form-group {
@@ -199,6 +286,11 @@
   gap: $space-lg;
 }
 
+.controls-card {
+  padding: $space-lg;
+  border-radius: $radius-xl;
+}
+
 .controls-bar {
   display: flex;
   gap: $space-lg;
@@ -276,6 +368,7 @@
 .table-card {
   @include card;
   overflow: hidden;
+  border-radius: $radius-xl;
 }
 
 .table-skeleton {
@@ -402,6 +495,14 @@
 }
 
 @media (max-width: $breakpoint-md) {
+  .candidates-hero__content {
+    padding: $space-xl;
+  }
+
+  .candidate-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .page-header {
     flex-direction: column;
 
@@ -413,6 +514,14 @@
 
   .controls-bar {
     align-items: stretch;
+  }
+
+  .candidates-hero__actions {
+    width: 100%;
+  }
+
+  .candidates-hero__actions .btn {
+    flex: 1 1 100%;
   }
 
   .search-box,
@@ -437,5 +546,19 @@
     td {
       padding: $space-md;
     }
+  }
+}
+
+@media (max-width: 576px) {
+  .candidate-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-tabs {
+    width: 100%;
+  }
+
+  .filter-tab {
+    flex: 1 1 auto;
   }
 }

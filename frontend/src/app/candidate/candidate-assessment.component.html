@@ -1,65 +1,114 @@
 <section *ngIf="!loading && session as s" class="assessment-layout">
-  <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
-    <div>
-      <h2 class="mb-1">{{ s.assessmentTitle }}</h2>
-      <p class="text-secondary mb-0">{{ ui.FullscreenHint }}</p>
-    </div>
+  <div class="assessment-hero card border-0 mb-4">
+    <div class="assessment-hero__content">
+      <div>
+        <p class="assessment-kicker mb-2">Candidate Assessment</p>
+        <h2 class="assessment-title mb-2">{{ s.assessmentTitle }}</h2>
+        <p class="assessment-copy mb-0">{{ ui.FullscreenHint }}</p>
+      </div>
 
-    <div class="timer-card text-center">
-      <small class="text-uppercase">{{ ui.TimeLeft }}</small>
-      <div class="display-6 fw-bold">{{ formatTime(remainingSeconds) }}</div>
-      <button class="btn btn-sm btn-outline-light" type="button" (click)="enterFullscreen()">{{ ui.EnterFullscreen }}</button>
+      <div class="timer-card text-center">
+        <small class="text-uppercase">{{ ui.TimeLeft }}</small>
+        <div class="display-6 fw-bold">{{ remainingLabel }}</div>
+        <button class="btn btn-sm btn-outline-light" type="button" (click)="enterFullscreen()">{{ ui.EnterFullscreen }}</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="assessment-summary mb-4">
+    <div class="summary-card">
+      <span class="summary-label">Answered</span>
+      <strong class="summary-value">{{ answeredCount }}</strong>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Questions</span>
+      <strong class="summary-value">{{ totalQuestions }}</strong>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Completion</span>
+      <strong class="summary-value">{{ completionPercent }}%</strong>
+    </div>
+    <div class="summary-card">
+      <span class="summary-label">Remaining</span>
+      <strong class="summary-value">{{ remainingLabel }}</strong>
     </div>
   </div>
 
   <div *ngIf="warningMessage" class="alert alert-warning">{{ warningMessage }}</div>
   <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
 
-  <form (ngSubmit)="submitAssessment()">
-    <div class="card border-0 shadow-sm mb-3" *ngFor="let question of s.questions; trackBy: trackByQuestionId; let i = index">
-      <div class="card-body">
-        <h5 class="card-title">{{ ui.QuestionPrefix }}{{ i + 1 }}. {{ question.prompt }}</h5>
-        <div class="text-secondary small mb-3">{{ ui.TypeMarksPrefix }} {{ question.questionType }} | {{ ui.MarksLabel }}: {{ question.marks }}</div>
+  <div class="assessment-workspace">
+    <form class="assessment-form" (ngSubmit)="submitAssessment()">
+      <div class="question-card card border-0 shadow-sm mb-3" *ngFor="let question of s.questions; trackBy: trackByQuestionId; let i = index">
+        <div class="card-body">
+          <div class="question-meta">
+            <span class="question-index">{{ ui.QuestionPrefix }}{{ i + 1 }}</span>
+            <span class="question-chip">{{ ui.TypeMarksPrefix }} {{ question.questionType }} | {{ ui.MarksLabel }}: {{ question.marks }}</span>
+          </div>
 
-        <div *ngIf="question.questionType === 'MCQ'">
-          <div class="form-check mb-2" *ngFor="let option of question.options">
-            <input
-              class="form-check-input"
-              type="radio"
-              [name]="question.id"
-              [id]="question.id + option.id"
-              [checked]="getAnswer(question.id)?.selectedOptionId === option.id"
-              (change)="saveMcq(question.id, option.id)">
-            <label class="form-check-label" [for]="question.id + option.id">{{ option.text }}</label>
+          <h5 class="card-title mt-3">{{ question.prompt }}</h5>
+
+          <div class="mcq-list" *ngIf="question.questionType === 'MCQ'">
+            <label class="answer-option" *ngFor="let option of question.options" [attr.for]="question.id + option.id">
+              <input
+                class="form-check-input"
+                type="radio"
+                [name]="question.id"
+                [id]="question.id + option.id"
+                [checked]="getAnswer(question.id)?.selectedOptionId === option.id"
+                (change)="saveMcq(question.id, option.id)">
+              <span>{{ option.text }}</span>
+            </label>
+          </div>
+
+          <div *ngIf="question.questionType === 'DESCRIPTIVE'">
+            <textarea
+              class="form-control answer-area"
+              rows="5"
+              [value]="getAnswer(question.id)?.descriptiveAnswer ?? ''"
+              (input)="saveTextAnswer(question.id, $any($event.target).value, 'descriptiveAnswer')"
+              [attr.placeholder]="ui.DescriptivePlaceholder"></textarea>
+          </div>
+
+          <div *ngIf="question.questionType === 'CODING'">
+            <textarea
+              class="form-control code-editor answer-area"
+              rows="10"
+              [value]="getAnswer(question.id)?.codingAnswer ?? ''"
+              (input)="saveTextAnswer(question.id, $any($event.target).value, 'codingAnswer')"
+              [attr.placeholder]="ui.CodingPlaceholder"></textarea>
           </div>
         </div>
+      </div>
 
-        <div *ngIf="question.questionType === 'DESCRIPTIVE'">
-          <textarea
-            class="form-control"
-            rows="5"
-            [value]="getAnswer(question.id)?.descriptiveAnswer ?? ''"
-            (input)="saveTextAnswer(question.id, $any($event.target).value, 'descriptiveAnswer')"
-            [attr.placeholder]="ui.DescriptivePlaceholder"></textarea>
-        </div>
+      <div class="submit-bar card border-0 shadow-sm mb-4">
+        <div class="submit-bar__content">
+          <div>
+            <p class="submit-bar__label mb-1">Ready to finish?</p>
+            <p class="submit-bar__copy mb-0">Save your progress first, then submit the entire assessment.</p>
+          </div>
 
-        <div *ngIf="question.questionType === 'CODING'">
-          <textarea
-            class="form-control code-editor"
-            rows="10"
-            [value]="getAnswer(question.id)?.codingAnswer ?? ''"
-            (input)="saveTextAnswer(question.id, $any($event.target).value, 'codingAnswer')"
-            [attr.placeholder]="ui.CodingPlaceholder"></textarea>
+          <button class="btn btn-lg btn-primary" [disabled]="submitting" type="submit">
+            {{ submitting ? ui.Submitting : ui.SubmitAssessment }}
+          </button>
         </div>
       </div>
-    </div>
+    </form>
 
-    <div class="d-flex justify-content-end mb-4">
-      <button class="btn btn-lg btn-primary" [disabled]="submitting" type="submit">
-        {{ submitting ? ui.Submitting : ui.SubmitAssessment }}
-      </button>
-    </div>
-  </form>
+    <aside class="assessment-side">
+      <div class="side-card card border-0 shadow-sm">
+        <div class="card-body">
+          <p class="side-card__kicker mb-2">Session guide</p>
+          <h3 class="h5 mb-2">Keep focus while you work</h3>
+          <ul class="side-list mb-0">
+            <li>Fullscreen is required for a stable proctoring session.</li>
+            <li>Your answers autosave at regular intervals.</li>
+            <li>Any warning here should be addressed immediately.</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </div>
 </section>
 
-<div *ngIf="loading" class="text-secondary">{{ ui.LoadingSession }}</div>
+<div *ngIf="loading" class="loading-shell text-secondary">{{ ui.LoadingSession }}</div>

@@ -1,17 +1,39 @@
-<div class="page-container">
-  <div class="page-header">
-    <div class="header-copy">
-      <h1>Live Monitoring</h1>
-      <p class="page-subtitle">Monitor candidate assessments, proctor anomalies, and drill into individual sessions.</p>
-    </div>
+<div class="page-container monitoring-page">
+  <div class="monitoring-hero card border-0 mb-4">
+    <div class="monitoring-hero__content">
+      <div>
+        <p class="monitoring-kicker mb-2">Live Monitoring</p>
+        <h1 class="monitoring-title mb-2">Track active assessments and react to suspicious events in real time.</h1>
+        <p class="monitoring-subtitle mb-0">Use the queue, proctoring dashboard, and candidate detail panel to stay ahead of every session.</p>
+      </div>
 
-    <div class="header-actions">
-      <span class="connection-pill" [ngClass]="'state-' + connectionState">
-        {{ getConnectionLabel() }}
-      </span>
-      <button class="btn btn-secondary" type="button" (click)="refresh()" [disabled]="loading">
-        Refresh
-      </button>
+      <div class="monitoring-hero__actions">
+        <span class="connection-pill" [ngClass]="'state-' + connectionState">
+          {{ getConnectionLabel() }}
+        </span>
+        <button class="btn btn-secondary" type="button" (click)="refresh()" [disabled]="loading">
+          Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="monitoring-metrics mb-4">
+    <div class="metric-card">
+      <span class="metric-label">Sessions</span>
+      <strong class="metric-value">{{ totalSessions }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Flagged</span>
+      <strong class="metric-value">{{ flaggedSessionCount }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Alerts</span>
+      <strong class="metric-value">{{ alertCount }}</strong>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Selected alerts</span>
+      <strong class="metric-value">{{ selectedAlertCount }}</strong>
     </div>
   </div>
 
@@ -19,11 +41,17 @@
     {{ error }}
   </div>
 
-  <app-alert-notification
-    [alerts]="alerts"
-    (inspect)="selectSession($event)"
-    (dismiss)="dismissAlert($event)">
-  </app-alert-notification>
+  <div class="monitoring-banner card border-0 mb-4" *ngIf="!loading && sessions.length > 0">
+    <div class="banner-copy">
+      <h2>Queue overview</h2>
+      <p>{{ sessions.length }} sessions are visible right now, with {{ flaggedSessionCount }} needing attention.</p>
+    </div>
+    <app-alert-notification
+      [alerts]="alerts"
+      (inspect)="selectSession($event)"
+      (dismiss)="dismissAlert($event)">
+    </app-alert-notification>
+  </div>
 
   <div class="monitoring-grid">
     <section class="panel panel-wide">

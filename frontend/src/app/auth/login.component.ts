@@ -11,6 +11,7 @@ import { takeUntil } from 'rxjs/operators';
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
+  styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnDestroy {
   error: string | null = null;

@@ -1,6 +1,7 @@
 <section class="proctor-card">
   <div class="card-header">
     <div>
+      <p class="card-kicker">Risk Console</p>
       <h3>Proctoring Watchlist</h3>
       <p>Flagged candidates and live risk indicators</p>
     </div>
@@ -9,15 +10,15 @@
   <div class="stats-grid">
     <div class="stat">
       <span class="label">Active Sessions</span>
-      <strong>{{ activeSessionsCount }}</strong>
+      <strong class="value">{{ activeSessionsCount }}</strong>
     </div>
     <div class="stat">
       <span class="label">Critical Alerts</span>
-      <strong>{{ criticalAlertCount }}</strong>
+      <strong class="value">{{ criticalAlertCount }}</strong>
     </div>
     <div class="stat">
       <span class="label">Flagged Candidates</span>
-      <strong>{{ flaggedSessions.length }}</strong>
+      <strong class="value">{{ flaggedSessions.length }}</strong>
     </div>
   </div>
 
