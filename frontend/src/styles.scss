@@ -57,6 +57,22 @@ body {
 	--ag-selected-row-background-color: rgba(47, 111, 128, 0.12);
 }
 
+/* Center content in ag-grid cells */
+.ag-theme-quartz .ag-cell {
+	display: flex;
+	align-items: center;
+}
+
+/* Action button container - flex layout for horizontal centering */
+.ag-row-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	justify-content: flex-start;
+	width: 100%;
+	height: 100%;
+}
+
 [class*='-hero'] h1[class$='-title'] {
 	font-size: clamp(22px, 2.1vw, 32px) !important;
 	line-height: 1.14 !important;
@@ -69,15 +85,18 @@ body {
 	justify-content: center;
 	width: 34px;
 	height: 34px;
+	min-width: 34px;
+	min-height: 34px;
 	border: 1px solid rgba(47, 111, 128, 0.24);
 	border-radius: 10px;
 	background: rgba(47, 111, 128, 0.06);
 	padding: 0;
-	margin-right: 0.35rem;
+	margin-right: 0;
 	font-size: 16px;
 	color: var(--portal-accent);
 	cursor: pointer;
 	transition: all 0.15s ease;
+	flex-shrink: 0;
 }
 
 .ag-action-btn:hover {
