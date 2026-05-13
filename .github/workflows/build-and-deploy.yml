@@ -202,6 +202,36 @@ jobs:
           cache-from: type=registry,ref=${{ needs.determine-services.outputs.image_prefix }}/${{ matrix.name }}:buildcache
           cache-to: type=registry,ref=${{ needs.determine-services.outputs.image_prefix }}/${{ matrix.name }}:buildcache,mode=max
 
+      - name: Log build result
+        if: matrix.name != '__skip__'
+        run: |
+          echo "Build Summary for ${{ matrix.name }}:"
+          echo "  Dockerfile: ${{ matrix.dockerfile }}"
+          echo "  Context: ${{ matrix.context }}"
+          echo "  Tags: ${{ needs.determine-services.outputs.image_prefix }}/${{ matrix.name }}:${{ github.sha }}"
+          echo "  Push: true"
+
+      - name: Verify image push
+        if: matrix.name != '__skip__'
+        shell: bash
+        run: |
+          REGISTRY_HOST="${{ env.REGISTRY_HOST }}"
+          IMAGE_PREFIX="${{ needs.determine-services.outputs.image_prefix }}"
+          IMAGE_TAG="${{ github.sha }}"
+          IMAGE_NAME="${{ matrix.name }}"
+          
+          FULL_IMAGE="${IMAGE_PREFIX}/${IMAGE_NAME}:${IMAGE_TAG}"
+          echo "Checking if image exists: $FULL_IMAGE"
+          
+          # Try to pull the image to verify it was pushed successfully
+          if docker pull "$FULL_IMAGE" > /dev/null 2>&1; then
+            echo "✓ Image successfully verified: $FULL_IMAGE"
+          else
+            echo "✗ FAILED: Image not found in registry: $FULL_IMAGE"
+            echo "This likely means the build/push failed. Check build logs above."
+            exit 1
+          fi
+
   deploy:
     name: Deploy to Server
     runs-on: ubuntu-latest
@@ -251,9 +281,31 @@ jobs:
             export REGISTRY="${{ needs.determine-services.outputs.image_prefix }}"
             export IMAGE_TAG="${{ github.sha }}"
 
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "Deployment Configuration:"
+            echo "  Registry: $REGISTRY"
+            echo "  Image Tag: $IMAGE_TAG"
+            echo "  Services: ${{ needs.determine-services.outputs.service_names }}"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+            echo "Logging into registry..."
             echo "${{ env.REGISTRY_PASSWORD }}" | docker login "${{ env.REGISTRY_HOST }}" -u "${{ env.REGISTRY_USERNAME }}" --password-stdin
 
-            docker compose -f docker-compose.prod.yml pull
+            echo "Pulling images from registry..."
+            if ! docker compose -f docker-compose.prod.yml pull; then
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo "ERROR: Failed to pull images from registry!"
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo "Possible causes:"
+              echo "  1. Build job failed to push images (check GitHub Actions logs)"
+              echo "  2. Registry credentials are invalid"
+              echo "  3. Network connectivity issue to registry"
+              echo "  4. Images don't exist in registry yet"
+              echo ""
+              echo "Verifying what images are available..."
+              docker images | grep -E "deepupaswan|assessement" || echo "No matching images found locally"
+              exit 1
+            fi
 
             # Keep the memory-heavy search stack out of the deployment path on the small VM.
             docker compose -f docker-compose.prod.yml stop elasticsearch kibana || true
@@ -288,11 +340,14 @@ jobs:
               echo "--- end logs: $name ---"
             }
 
+            echo "Starting infrastructure services..."
             docker compose -f docker-compose.prod.yml up -d sqlserver rabbitmq
             wait_healthy sqlserver
             wait_healthy rabbitmq
 
+            echo "Starting microservices..."
             for service in identity-service answer-service assessment-service candidate-service result-service; do
+              echo "  Deploying $service..."
               docker compose -f docker-compose.prod.yml up -d --no-deps "$service"
               if ! wait_healthy "$service"; then
                 dump_logs "$service"
@@ -300,8 +355,12 @@ jobs:
               fi
             done
 
+            echo "Starting API gateway and frontend..."
             docker compose -f docker-compose.prod.yml up -d --no-deps api-gateway frontend
             wait_healthy api-gateway
             wait_healthy frontend
 
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "✓ Deployment completed successfully!"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             docker compose -f docker-compose.prod.yml ps
